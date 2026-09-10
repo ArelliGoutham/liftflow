@@ -17,8 +17,35 @@ export interface IPlan {
   goal?: string;
   description?: string;
   isActive: boolean;
+  startDate?: string;
+  endDate?: string;
+  weeklyAnchor?: number;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface DaySchedule {
+  date: string;
+  dayOfWeek: number;
+  dayLabel: string;
+  workoutDayId: string | null;
+  workoutTitle: string | null;
+  isRest: boolean;
+  isToday: boolean;
+  isPast: boolean;
+  isFuture: boolean;
+  isCompleted: boolean;
+  isInGracePeriod: boolean;
+  isMissed: boolean;
+  isCatchUpEligible: boolean;
+}
+
+export interface WeekSchedule {
+  days: DaySchedule[];
+  todayIndex: number;
+  missedDays: DaySchedule[];
+  planExpired: boolean;
+  planExpiryMessage: string | null;
 }
 
 export interface IWorkoutDay {

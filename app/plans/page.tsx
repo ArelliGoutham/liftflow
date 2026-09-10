@@ -34,7 +34,14 @@ export default function PlansPage() {
     fetchPlans();
   }, []);
 
-  async function handleCreate(data: { name: string; goal: string; description: string }) {
+  async function handleCreate(data: {
+    name: string;
+    goal: string;
+    description: string;
+    startDate?: string;
+    endDate?: string;
+    weeklyAnchor?: number;
+  }) {
     try {
       const res = await fetch('/api/plans', {
         method: 'POST',

@@ -8,6 +8,9 @@ const PlanSchema = new Schema<IPlan>(
     goal: { type: String },
     description: { type: String },
     isActive: { type: Boolean, default: false },
+    startDate: { type: String },
+    endDate: { type: String },
+    weeklyAnchor: { type: Number, default: 1 },
   },
   { timestamps: true }
 );

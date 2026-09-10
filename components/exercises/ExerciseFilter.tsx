@@ -1,0 +1,33 @@
+'use client';
+
+interface ExerciseFilterProps {
+  selectedCategory: string;
+  onCategoryChange: (category: string) => void;
+}
+
+const categories = [
+  { value: '', label: 'All' },
+  { value: 'upper-body', label: 'Upper Body' },
+  { value: 'lower-body', label: 'Lower Body' },
+  { value: 'core', label: 'Core' },
+];
+
+export default function ExerciseFilter({ selectedCategory, onCategoryChange }: ExerciseFilterProps) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {categories.map((cat) => (
+        <button
+          key={cat.value}
+          onClick={() => onCategoryChange(cat.value)}
+          className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+            selectedCategory === cat.value
+              ? 'bg-primary-600 text-white'
+              : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+          }`}
+        >
+          {cat.label}
+        </button>
+      ))}
+    </div>
+  );
+}

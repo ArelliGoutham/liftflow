@@ -10,12 +10,24 @@ export default async function ExerciseDetailPage({ params }: { params: { id: str
     return notFound();
   }
 
+  const detail = {
+    name: exercise.name,
+    category: exercise.category,
+    description: exercise.description,
+    setupCues: exercise.setupCues ?? [],
+    executionCues: exercise.executionCues ?? [],
+    breathingCues: exercise.breathingCues ?? [],
+    commonMistakes: exercise.commonMistakes ?? [],
+    safetyNotes: exercise.safetyNotes ?? [],
+    referenceUrls: exercise.referenceUrls ?? [],
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <Link href="/exercises" className="text-sm text-slate-400 underline">
         ← Back to library
       </Link>
-      <ExerciseDetail exercise={exercise} />
+      <ExerciseDetail exercise={detail} />
     </div>
   );
 }

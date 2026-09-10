@@ -19,7 +19,8 @@ export default function ExerciseFilter({ selectedCategory, onCategoryChange }: E
         <button
           key={cat.value}
           onClick={() => onCategoryChange(cat.value)}
-          className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+          aria-pressed={selectedCategory === cat.value}
+          className={`rounded-full px-3 py-1 text-sm font-medium transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
             selectedCategory === cat.value
               ? 'bg-primary-600 text-white'
               : 'bg-slate-800 text-slate-400 hover:bg-slate-700'

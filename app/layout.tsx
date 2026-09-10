@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { SessionProvider } from '@/components/providers/SessionProvider';
-import UserMenu from '@/components/auth/UserMenu';
-import Link from 'next/link';
+import AppShell from '@/components/layout/AppShell';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -20,17 +19,9 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className="min-h-screen">
+      <body className="bg-charcoal text-slate-100">
         <SessionProvider session={session}>
-          <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/75 backdrop-blur">
-            <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
-              <Link href="/dashboard" className="text-lg font-bold text-primary-400">
-                LiftFlow
-              </Link>
-              <UserMenu />
-            </div>
-          </header>
-          <main className="mx-auto max-w-2xl px-4 py-6">{children}</main>
+          <AppShell>{children}</AppShell>
         </SessionProvider>
       </body>
     </html>

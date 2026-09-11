@@ -65,9 +65,11 @@ export interface IWorkoutDay {
 export interface IWorkoutExercise {
   exerciseId: ObjectId;
   order: number;
+  trackingMode?: 'reps' | 'duration';
   targetSets: number;
   targetRepetitions?: number;
-  targetDurationSeconds?: number;
+  targetDurationValue?: number;
+  durationUnit?: 'seconds' | 'minutes';
   restSeconds: number;
   notes?: string;
 }
@@ -107,10 +109,12 @@ export interface IExerciseLog {
   sessionId: ObjectId;
   exerciseId: ObjectId;
   completed: boolean;
+  trackingMode?: 'reps' | 'duration';
   sets?: number;
   weight?: number;
   repetitions?: number;
-  durationSeconds?: number;
+  durationValue?: number;
+  durationUnit?: 'seconds' | 'minutes';
   notes?: string;
   loggedAt: Date;
   createdAt: Date;

@@ -1,13 +1,15 @@
 import mongoose, { Schema } from 'mongoose';
 import type { IWorkoutDay, IWorkoutExercise } from '@/types';
 
-const WorkoutExerciseSchema = new Schema<IWorkoutExercise>(
+const WorkoutExerciseSchema = new Schema(
   {
     exerciseId: { type: String, required: true },
     order: { type: Number, required: true, default: 0 },
+    trackingMode: { type: String, enum: ['reps', 'duration'], default: 'reps' },
     targetSets: { type: Number, required: true, default: 3 },
     targetRepetitions: { type: Number },
-    targetDurationSeconds: { type: Number },
+    targetDurationValue: { type: Number },
+    durationUnit: { type: String, enum: ['seconds', 'minutes'], default: 'seconds' },
     restSeconds: { type: Number, default: 90 },
     notes: { type: String },
   }

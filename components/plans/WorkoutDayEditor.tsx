@@ -1,22 +1,25 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, GripVertical, AlertCircle, Save } from 'lucide-react';
+import { Plus, Trash2, GripVertical, AlertCircle, Save, Clock, Dumbbell } from 'lucide-react';
 import Link from 'next/link';
 
 interface WorkoutExercise {
   exerciseId: string;
   exerciseName?: string;
   order: number;
+  trackingMode: 'reps' | 'duration';
   targetSets: number;
   targetRepetitions?: number;
-  targetDurationSeconds?: number;
+  targetDurationValue?: number;
+  durationUnit: 'seconds' | 'minutes';
   restSeconds: number;
   notes?: string;
 }
 
 interface ExerciseOption {
   _id: string;
+  id?: string;
   name: string;
   category: string;
 }
@@ -46,9 +49,11 @@ export default function WorkoutDayEditor({ workoutDayId, dayTitle }: WorkoutDayE
         exerciseId: ex.exerciseId?.toString() ?? '',
         exerciseName: ex.exerciseName ?? '',
         order: ex.order ?? i,
+        trackingMode: ex.trackingMode ?? 'reps',
         targetSets: ex.targetSets ?? 3,
         targetRepetitions: ex.targetRepetitions,
-        targetDurationSeconds: ex.targetDurationSeconds,
+        targetDurationValue: ex.targetDurationValue,
+        durationUnit: ex.durationUnit ?? 'seconds',
         restSeconds: ex.restSeconds ?? 90,
         notes: ex.notes ?? '',
       }));
@@ -63,12 +68,17 @@ export default function WorkoutDayEditor({ workoutDayId, dayTitle }: WorkoutDayE
       setLoading(true);
       await Promise.all([
         fetchDay(),
-        fetch('/api/exercises?sharedOnly=true')
+        fetch('/api/exercises?sharedOnly=true&limit=1400')
           .then((r) => r.json())
           .then((data) => {
             if (Array.isArray(data)) {
               setAvailableExercises(
-                data.map((e: any) => ({ _id: e._id, name: e.name, category: e.category }))
+                data.map((e: any) => ({
+                  _id: e._id || e.id,
+                  id: e.id,
+                  name: e.name,
+                  category: e.category,
+                }))
               );
             }
           })
@@ -87,8 +97,10 @@ export default function WorkoutDayEditor({ workoutDayId, dayTitle }: WorkoutDayE
         exerciseId,
         exerciseName: name,
         order: nextOrder,
+        trackingMode: 'reps',
         targetSets: 3,
         targetRepetitions: 10,
+        durationUnit: 'seconds',
         restSeconds: 90,
         notes: '',
       },
@@ -126,6 +138,23 @@ export default function WorkoutDayEditor({ workoutDayId, dayTitle }: WorkoutDayE
     setSaveSuccess(false);
   }
 
+  function toggleTrackingMode(index: number) {
+    setExercises((prev) => {
+      const updated = [...prev];
+      const current = updated[index];
+      updated[index] = {
+        ...current,
+        trackingMode: current.trackingMode === 'reps' ? 'duration' : 'reps',
+        // Clear fields that don't apply to the new mode
+        targetRepetitions: current.trackingMode === 'reps' ? undefined : current.targetRepetitions,
+        targetDurationValue: current.trackingMode === 'duration' ? undefined : current.targetDurationValue,
+        durationUnit: current.trackingMode === 'reps' ? 'seconds' : current.durationUnit,
+      };
+      return updated;
+    });
+    setSaveSuccess(false);
+  }
+
   async function handleSave() {
     setSaving(true);
     setError(null);
@@ -138,9 +167,11 @@ export default function WorkoutDayEditor({ workoutDayId, dayTitle }: WorkoutDayE
           exercises: exercises.map((ex) => ({
             exerciseId: ex.exerciseId,
             order: ex.order,
+            trackingMode: ex.trackingMode,
             targetSets: ex.targetSets,
-            targetRepetitions: ex.targetRepetitions || undefined,
-            targetDurationSeconds: ex.targetDurationSeconds || undefined,
+            targetRepetitions: ex.trackingMode === 'reps' ? (ex.targetRepetitions || undefined) : undefined,
+            targetDurationValue: ex.trackingMode === 'duration' ? (ex.targetDurationValue || undefined) : undefined,
+            durationUnit: ex.trackingMode === 'duration' ? ex.durationUnit : undefined,
             restSeconds: ex.restSeconds,
             notes: ex.notes || undefined,
           })),
@@ -175,9 +206,9 @@ export default function WorkoutDayEditor({ workoutDayId, dayTitle }: WorkoutDayE
         </div>
       )}
 
-      {/* Exercise list */}
       {exercises.length === 0 && !showAddPicker && (
         <div className="card text-center py-8">
+          <Dumbbell className="w-8 h-8 text-slate-600 mx-auto mb-3" />
           <p className="text-slate-400 mb-4">No exercises in this workout day yet.</p>
           <button className="btn-primary" onClick={() => setShowAddPicker(true)}>
             <Plus className="w-4 h-4" /> Add exercise
@@ -226,54 +257,120 @@ export default function WorkoutDayEditor({ workoutDayId, dayTitle }: WorkoutDayE
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-slate-500">Sets</label>
-                  <input
-                    className="input"
-                    type="number"
-                    min={1}
-                    value={ex.targetSets}
-                    onChange={(e) => updateExercise(index, 'targetSets', parseInt(e.target.value) || 1)}
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-slate-500">Reps</label>
-                  <input
-                    className="input"
-                    type="number"
-                    min={1}
-                    placeholder="—"
-                    value={ex.targetRepetitions ?? ''}
-                    onChange={(e) =>
-                      updateExercise(index, 'targetRepetitions', e.target.value ? parseInt(e.target.value) : undefined as any)
-                    }
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-slate-500">Duration (sec)</label>
-                  <input
-                    className="input"
-                    type="number"
-                    min={1}
-                    placeholder="—"
-                    value={ex.targetDurationSeconds ?? ''}
-                    onChange={(e) =>
-                      updateExercise(index, 'targetDurationSeconds', e.target.value ? parseInt(e.target.value) : undefined as any)
-                    }
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-slate-500">Rest (sec)</label>
-                  <input
-                    className="input"
-                    type="number"
-                    min={0}
-                    value={ex.restSeconds}
-                    onChange={(e) => updateExercise(index, 'restSeconds', parseInt(e.target.value) || 0)}
-                  />
+              {/* Tracking mode toggle */}
+              <div className="mb-3">
+                <div className="inline-flex rounded-lg border border-slate-700 bg-slate-800/50 p-0.5">
+                  <button
+                    onClick={() => ex.trackingMode !== 'reps' && toggleTrackingMode(index)}
+                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                      ex.trackingMode === 'reps'
+                        ? 'bg-lime text-charcoal'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <Dumbbell className="w-3 h-3" /> Reps
+                  </button>
+                  <button
+                    onClick={() => ex.trackingMode !== 'duration' && toggleTrackingMode(index)}
+                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                      ex.trackingMode === 'duration'
+                        ? 'bg-lime text-charcoal'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <Clock className="w-3 h-3" /> Duration
+                  </button>
                 </div>
               </div>
+
+              {/* Reps mode fields */}
+              {ex.trackingMode === 'reps' && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-slate-500">Sets</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={1}
+                      value={ex.targetSets}
+                      onChange={(e) => updateExercise(index, 'targetSets', parseInt(e.target.value) || 1)}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-slate-500">Reps</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={1}
+                      placeholder="—"
+                      value={ex.targetRepetitions ?? ''}
+                      onChange={(e) =>
+                        updateExercise(index, 'targetRepetitions', e.target.value ? parseInt(e.target.value) : undefined as any)
+                      }
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-slate-500">Rest (sec)</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={0}
+                      value={ex.restSeconds}
+                      onChange={(e) => updateExercise(index, 'restSeconds', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Duration mode fields */}
+              {ex.trackingMode === 'duration' && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-slate-500">Sets</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={1}
+                      value={ex.targetSets}
+                      onChange={(e) => updateExercise(index, 'targetSets', parseInt(e.target.value) || 1)}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-slate-500">Duration</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={1}
+                      placeholder="—"
+                      value={ex.targetDurationValue ?? ''}
+                      onChange={(e) =>
+                        updateExercise(index, 'targetDurationValue', e.target.value ? parseInt(e.target.value) : undefined as any)
+                      }
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-slate-500">Unit</label>
+                    <select
+                      className="input"
+                      value={ex.durationUnit}
+                      onChange={(e) => updateExercise(index, 'durationUnit', e.target.value)}
+                    >
+                      <option value="seconds">Seconds</option>
+                      <option value="minutes">Minutes</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1 col-span-2 sm:col-span-3">
+                    <label className="text-xs text-slate-500">Rest (sec)</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={0}
+                      value={ex.restSeconds}
+                      onChange={(e) => updateExercise(index, 'restSeconds', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+              )}
 
               <input
                 className="input mt-2"
@@ -307,7 +404,6 @@ export default function WorkoutDayEditor({ workoutDayId, dayTitle }: WorkoutDayE
         </div>
       )}
 
-      {/* Exercise picker */}
       {showAddPicker && (
         <div className="card flex flex-col gap-3">
           <div className="flex items-center justify-between">

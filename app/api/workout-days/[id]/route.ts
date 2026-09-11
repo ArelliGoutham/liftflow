@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getWorkoutDayById, updateWorkoutDay, deleteWorkoutDay } from '@/lib/db/repositories/workoutDayRepository';
+import { getWorkoutDayWithExerciseNames, updateWorkoutDay, deleteWorkoutDay } from '@/lib/db/repositories/workoutDayRepository';
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const day = await getWorkoutDayById(params.id);
+    const day = await getWorkoutDayWithExerciseNames(params.id);
     if (!day) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }

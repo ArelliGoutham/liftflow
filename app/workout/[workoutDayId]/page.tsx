@@ -2,20 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Dumbbell, AlertCircle } from 'lucide-react';
 import ExerciseLogForm from '@/components/workout/ExerciseLogForm';
 
 interface ExerciseInfo {
   exerciseId: string;
-  name: string;
+  exerciseName?: string;
+  name?: string;
   order: number;
   targetSets: number;
   targetRepetitions?: number;
+  targetDurationSeconds?: number;
   restSeconds: number;
   notes?: string;
 }
 
 interface WorkoutDay {
   _id: string;
+  planId?: string;
   title: string;
   warmupInstructions?: string;
   cardioInstructions?: string;
@@ -28,42 +32,52 @@ export default function WorkoutSessionPage({ params }: { params: { workoutDayId:
   const [logIds, setLogIds] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [completed, setCompleted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function init() {
       try {
         const dayRes = await fetch(`/api/workout-days/${params.workoutDayId}`);
-        if (dayRes.ok) {
-          const day = await dayRes.json();
-          setWorkoutDay(day);
+        if (!dayRes.ok) throw new Error('Failed to load workout');
+        const day = await dayRes.json();
+        setWorkoutDay(day);
 
-          const sessionRes = await fetch('/api/sessions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              planId: day.planId,
-              workoutDayId: day._id,
-            }),
-          });
-          if (sessionRes.ok) {
-            const session = await sessionRes.json();
-            setSessionId(session._id);
+        if (!day.exercises || day.exercises.length === 0) {
+          setLoading(false);
+          return;
+        }
 
-            for (const ex of day.exercises || []) {
-              const logRes = await fetch('/api/logs', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessionId: session._id, exerciseId: ex.exerciseId, completed: false, loggedAt: new Date() }),
-              });
-              if (logRes.ok) {
-                const log = await logRes.json();
-                setLogIds((prev) => ({ ...prev, [ex.exerciseId]: log._id }));
-              }
+        const sessionRes = await fetch('/api/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            planId: day.planId,
+            workoutDayId: day._id,
+          }),
+        });
+        if (sessionRes.ok) {
+          const session = await sessionRes.json();
+          setSessionId(session._id);
+
+          for (const ex of day.exercises || []) {
+            const logRes = await fetch('/api/logs', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sessionId: session._id,
+                exerciseId: ex.exerciseId,
+                completed: false,
+                loggedAt: new Date(),
+              }),
+            });
+            if (logRes.ok) {
+              const log = await logRes.json();
+              setLogIds((prev) => ({ ...prev, [ex.exerciseId]: log._id }));
             }
           }
         }
       } catch {
-        // error handled silently
+        setError('Could not load workout. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -103,47 +117,71 @@ export default function WorkoutSessionPage({ params }: { params: { workoutDayId:
   }
 
   if (loading) return <div className="text-slate-500">Preparing workout...</div>;
+  if (error) {
+    return (
+      <div role="alert" className="card border-red-500/50 bg-red-500/10">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+          <p className="text-red-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
   if (!workoutDay) return <div className="text-slate-500">Workout not found.</div>;
+
+  const exerciseList = workoutDay.exercises || [];
 
   return (
     <div className="flex flex-col gap-4">
-      <Link href={`/plans/${workoutDay._id}`} className="text-sm text-slate-400 underline">← Back to plan</Link>
+      <Link href="/plans" className="text-sm text-slate-400 underline">← Back to plans</Link>
 
       <div className="card">
-        <h1 className="text-2xl font-bold text-primary-400">{workoutDay.title}</h1>
+        <h1 className="text-2xl font-bold text-lime">{workoutDay.title}</h1>
         {workoutDay.warmupInstructions && (
           <p className="mt-1 text-sm text-slate-400">Warmup: {workoutDay.warmupInstructions}</p>
         )}
       </div>
 
-      <div className="flex flex-col gap-3">
-        {(workoutDay.exercises || []).map((ex) => (
-          <ExerciseLogForm
-            key={ex.exerciseId}
-            exerciseName={ex.name}
-            targetSets={ex.targetSets}
-            targetReps={ex.targetRepetitions}
-            restSeconds={ex.restSeconds}
-            onLog={(data) => handleLog(ex.exerciseId, data)}
-          />
-        ))}
-      </div>
-
-      {workoutDay.cardioInstructions && (
-        <div className="card">
-          <h3 className="font-semibold">Cardio</h3>
-          <p className="text-sm text-slate-400">{workoutDay.cardioInstructions}</p>
+      {exerciseList.length === 0 ? (
+        <div className="card text-center py-8">
+          <Dumbbell className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+          <p className="text-slate-400 mb-2">No exercises added to this workout day yet.</p>
+          <Link href={`/plans`} className="text-lime text-sm underline">
+            Add exercises in plan editor →
+          </Link>
         </div>
-      )}
-
-      {!completed ? (
-        <button className="btn-primary" onClick={finishWorkout}>
-          Finish Workout
-        </button>
       ) : (
-        <div className="rounded-lg bg-emerald-600/20 p-3 text-center text-emerald-400">
-          Workout completed ✓
-        </div>
+        <>
+          <div className="flex flex-col gap-3">
+            {exerciseList.map((ex) => (
+              <ExerciseLogForm
+                key={ex.exerciseId}
+                exerciseName={ex.exerciseName || ex.name || 'Exercise'}
+                targetSets={ex.targetSets}
+                targetReps={ex.targetRepetitions}
+                restSeconds={ex.restSeconds}
+                onLog={(data) => handleLog(ex.exerciseId, data)}
+              />
+            ))}
+          </div>
+
+          {workoutDay.cardioInstructions && (
+            <div className="card">
+              <h3 className="font-semibold">Cardio</h3>
+              <p className="text-sm text-slate-400">{workoutDay.cardioInstructions}</p>
+            </div>
+          )}
+
+          {!completed ? (
+            <button className="btn-primary" onClick={finishWorkout}>
+              Finish Workout
+            </button>
+          ) : (
+            <div className="rounded-lg bg-lime/20 p-3 text-center text-lime font-medium">
+              Workout completed ✓
+            </div>
+          )}
+        </>
       )}
     </div>
   );

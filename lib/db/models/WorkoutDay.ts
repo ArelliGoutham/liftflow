@@ -3,7 +3,7 @@ import type { IWorkoutDay, IWorkoutExercise } from '@/types';
 
 const WorkoutExerciseSchema = new Schema<IWorkoutExercise>(
   {
-    exerciseId: { type: Schema.Types.ObjectId, required: true, ref: 'Exercise' },
+    exerciseId: { type: String, required: true },
     order: { type: Number, required: true, default: 0 },
     targetSets: { type: Number, required: true, default: 3 },
     targetRepetitions: { type: Number },

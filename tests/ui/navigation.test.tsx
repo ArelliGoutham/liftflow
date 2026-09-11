@@ -46,7 +46,7 @@ describe('AppShell Navigation', () => {
   it('provides a sign-in link when viewing the library signed out', () => {
     (useSession as jest.Mock).mockReturnValue({ data: null, status: 'unauthenticated' });
     render(<AppShell><p>Library</p></AppShell>);
-    expect(screen.getAllByRole('link', { name: 'Sign in' })[0]).toHaveAttribute('href', '/');
+    expect(screen.getAllByRole('link', { name: 'Sign in' })[0]).toHaveAttribute('href', '/login');
   });
 
   it('renders desktop sidebar with Exercises nav link when authenticated', () => {

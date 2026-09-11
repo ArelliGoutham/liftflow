@@ -53,12 +53,12 @@ export default function ExerciseList({ exercises }: ExerciseListProps) {
             className="card group hover:border-lime/50 transition-colors flex flex-col gap-3 overflow-hidden"
           >
             {exercise.imageUrls && exercise.imageUrls.length > 0 ? (
-              <div className="relative h-28 -mx-4 -mt-4 mb-1 overflow-hidden bg-slate-800">
+              <div className="relative h-28 -mx-4 -mt-4 mb-1 overflow-hidden bg-slate-800 flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={exercise.imageUrls[0]}
                   alt={exercise.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                   loading="lazy"
                 />
               </div>

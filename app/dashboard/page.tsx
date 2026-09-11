@@ -74,7 +74,7 @@ export default function DashboardPage() {
         <h1 className="page-title">Welcome to LiftFlow</h1>
         <div className="card flex flex-col gap-4 text-center">
           <p className="text-slate-300">Sign in to access your personalized dashboard</p>
-          <Link href="/" className="btn btn-primary w-fit mx-auto">Sign in</Link>
+          <Link href="/login" className="btn btn-primary w-fit mx-auto">Sign in</Link>
         </div>
       </div>
     );

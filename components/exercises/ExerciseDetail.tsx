@@ -51,13 +51,13 @@ export default function ExerciseDetail({ exercise }: ExerciseDetailProps) {
           {exercise.imageUrls.slice(0, 4).map((url, i) => (
             <div
               key={i}
-              className="overflow-hidden rounded-xl border border-slate-700 bg-slate-800"
+              className="overflow-hidden rounded-xl border border-slate-700 bg-slate-800 flex items-center justify-center"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={url}
                 alt={`${exercise.name} - pose ${i + 1}`}
-                className="w-full h-48 object-cover"
+                className="w-full h-auto max-h-72 object-contain"
                 loading="lazy"
               />
             </div>

@@ -30,7 +30,7 @@ function isNavItemActive(pathname: string, href: string): boolean {
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { status } = useSession();
-  const isLanding = pathname === '/';
+  const isLanding = pathname === '/' || pathname === '/login';
   const isLoading = status === 'loading';
   const isAuthenticated = status === 'authenticated';
 

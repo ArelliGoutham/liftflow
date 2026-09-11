@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         externalExercises = externalExercises.filter((e) => e.category === category);
       }
       if (sharedOnly) {
-        externalExercises = externalExercises.filter((e) => e.isShared);
+        externalExercises = externalExercises.filter((e) => e.isShared !== false);
       }
     }
 

@@ -18,7 +18,7 @@ export async function getExternalExercises(): Promise<any[]> {
   }
 
   try {
-    const res = await fetch(EXERCISE_DB_URL, { next: { revalidate: 600 } });
+    const res = await fetch(EXERCISE_DB_URL, { cache: 'no-store' });
     if (!res.ok) throw new Error(`Failed: ${res.status}`);
     const data = await res.json();
 
@@ -27,7 +27,8 @@ export async function getExternalExercises(): Promise<any[]> {
     cachedExercises = data;
     cacheTime = Date.now();
     return data;
-  } catch {
+  } catch (err) {
+    console.error('[externalExercises] Fetch failed:', err instanceof Error ? err.message : err);
     if (cachedExercises) return cachedExercises;
     return [];
   }

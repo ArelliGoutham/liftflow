@@ -10,6 +10,7 @@ const categories = [
   { value: 'upper-body', label: 'Upper Body' },
   { value: 'lower-body', label: 'Lower Body' },
   { value: 'core', label: 'Core' },
+  { value: 'cardio', label: 'Cardio' },
 ];
 
 export default function ExerciseFilter({ selectedCategory, onCategoryChange }: ExerciseFilterProps) {

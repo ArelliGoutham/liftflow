@@ -11,7 +11,7 @@ export async function createSession(data: Partial<IWorkoutSession>): Promise<IWo
 
 export async function getSessionById(id: string): Promise<IWorkoutSession | null> {
   await connectToDatabase();
-  return WorkoutSession.findById(id).lean() as Promise<IWorkoutSession | null>;
+  return WorkoutSession.findById(id).lean() as unknown as Promise<IWorkoutSession | null>;
 }
 
 export async function completeSession(id: string, notes?: string): Promise<IWorkoutSession | null> {
@@ -20,10 +20,10 @@ export async function completeSession(id: string, notes?: string): Promise<IWork
     id,
     { completedAt: new Date(), notes },
     { new: true }
-  ).lean() as Promise<IWorkoutSession | null>;
+  ).lean() as unknown as Promise<IWorkoutSession | null>;
 }
 
 export async function getRecentSessions(userId: string, limit = 10): Promise<IWorkoutSession[]> {
   await connectToDatabase();
-  return WorkoutSession.find({ userId }).sort({ startedAt: -1 }).limit(limit).lean() as Promise<IWorkoutSession[]>;
+  return WorkoutSession.find({ userId }).sort({ startedAt: -1 }).limit(limit).lean() as unknown as Promise<IWorkoutSession[]>;
 }

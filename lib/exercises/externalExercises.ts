@@ -37,7 +37,7 @@ function mapCategory(category: string): string {
 function transform(entry: FreeExerciseDbEntry): IExercise {
   const instructions = entry.instructions || [];
   return {
-    _id: '' as any,
+    _id: entry.id as any,
     name: entry.name,
     category: mapCategory(entry.category),
     description: instructions.slice(0, 2).join(' ') || undefined,

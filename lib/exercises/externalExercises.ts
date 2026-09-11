@@ -1,90 +1,48 @@
 import type { IExercise } from '@/types';
 
-const FORK_URL =
-  'https://raw.githubusercontent.com/ArelliGoutham/free-exercise-db/main/dist/exercises.json';
-const FORK_IMG_BASE =
-  'https://raw.githubusercontent.com/ArelliGoutham/free-exercise-db/main/exercises/';
+// Canonical exercise database — 1,376 exercises merged from:
+//   - free-exercise-db (public domain, CC0)
+//   - RepDB (attribution: repdb.co)
+//   - wrkout/exercises.json (public domain, CC0)
+// Repo: https://github.com/ArelliGoutham/exercise-database
+const EXERCISE_DB_URL =
+  'https://raw.githubusercontent.com/ArelliGoutham/exercise-database/main/dist/exercises.json';
 
-interface FreeExerciseDbEntry {
-  id: string;
-  name: string;
-  force: string | null;
-  level: string;
-  mechanic: string | null;
-  equipment: string | null;
-  primaryMuscles: string[];
-  secondaryMuscles: string[];
-  instructions: string[];
-  category: string;
-  images: string[];
-}
-
-let cachedExercises: IExercise[] | null = null;
+let cachedExercises: any[] | null = null;
 let cacheTime = 0;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
-function mapCategory(category: string): string {
-  const cat = category.toLowerCase();
-  if (cat === 'cardio') return 'cardio';
-  if (cat === 'stretching') return 'flexibility';
-  if (cat === 'plyometrics') return 'plyometrics';
-  if (cat === 'strength' || cat === 'powerlifting' || cat === 'olympic weightlifting' || cat === 'strongman') {
-    return 'upper-body';
-  }
-  return 'upper-body';
-}
-
-function transform(entry: FreeExerciseDbEntry): IExercise {
-  const instructions = entry.instructions || [];
-  return {
-    _id: entry.id as any,
-    name: entry.name,
-    category: mapCategory(entry.category),
-    description: instructions.slice(0, 2).join(' ') || undefined,
-    setupCues: instructions.slice(0, 2),
-    executionCues: instructions.slice(2),
-    breathingCues: [],
-    commonMistakes: [],
-    safetyNotes: [],
-    referenceUrls: ['https://github.com/ArelliGoutham/free-exercise-db'],
-    isShared: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  } as IExercise;
-}
-
 export async function getExternalExercises(): Promise<any[]> {
   if (cachedExercises && Date.now() - cacheTime < CACHE_TTL_MS) {
-    return cachedExercises as any[];
+    return cachedExercises;
   }
 
   try {
-    const res = await fetch(FORK_URL, { next: { revalidate: 600 } });
+    const res = await fetch(EXERCISE_DB_URL, { next: { revalidate: 600 } });
     if (!res.ok) throw new Error(`Failed: ${res.status}`);
-    const data: FreeExerciseDbEntry[] = await res.json();
+    const data = await res.json();
 
-    const transformed = data.map((entry) => ({
-      ...transform(entry),
-      sourceIds: { freeExerciseDb: entry.id },
-      forceType: entry.force || undefined,
-      level: entry.level,
-      mechanic: entry.mechanic || undefined,
-      equipment: entry.equipment || 'body only',
-      primaryMuscles: entry.primaryMuscles || [],
-      secondaryMuscles: entry.secondaryMuscles || [],
-      imageUrls: (entry.images || []).map((img) => `${FORK_IMG_BASE}${img}`),
-    }));
+    if (!Array.isArray(data)) throw new Error('Invalid response format');
 
-    cachedExercises = transformed as any;
+    cachedExercises = data;
     cacheTime = Date.now();
-    return transformed;
+    return data;
   } catch {
-    if (cachedExercises) return cachedExercises as any[];
+    if (cachedExercises) return cachedExercises;
     return [];
   }
 }
 
 export async function getExternalExerciseById(id: string): Promise<any | null> {
   const all = await getExternalExercises();
-  return all.find((e: any) => e.sourceIds?.freeExerciseDb === id || e.name === id) || null;
+  return (
+    all.find(
+      (e: any) =>
+        e.id === id ||
+        e._id === id ||
+        e.sourceIds?.freeExerciseDb === id ||
+        e.sourceIds?.repdb === id ||
+        e.name === id
+    ) || null
+  );
 }

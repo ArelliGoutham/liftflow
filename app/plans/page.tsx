@@ -71,7 +71,7 @@ export default function PlansPage() {
       {loading ? (
         <div className="text-slate-500">Loading plans...</div>
       ) : (
-        <PlanList plans={plans} />
+        <PlanList plans={plans} onPlanDeleted={fetchPlans} />
       )}
     </div>
   );

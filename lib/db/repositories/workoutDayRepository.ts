@@ -1,5 +1,6 @@
 import connectToDatabase from '@/lib/db/connection';
 import WorkoutDay from '@/lib/db/models/WorkoutDay';
+import Exercise from '@/lib/db/models/Exercise';
 import type { IWorkoutDay, IWorkoutExercise } from '@/types';
 
 export async function getPlanWorkoutDays(planId: string): Promise<IWorkoutDay[]> {
@@ -9,7 +10,29 @@ export async function getPlanWorkoutDays(planId: string): Promise<IWorkoutDay[]>
 
 export async function getWorkoutDayById(id: string): Promise<IWorkoutDay | null> {
   await connectToDatabase();
-  return WorkoutDay.findById(id).lean() as Promise<IWorkoutDay | null>;
+  const day = await WorkoutDay.findById(id).lean();
+  if (!day) return null;
+  return day as unknown as IWorkoutDay;
+}
+
+export async function getWorkoutDayWithExerciseNames(id: string): Promise<any | null> {
+  await connectToDatabase();
+  const day = await WorkoutDay.findById(id).lean() as any;
+  if (!day) return null;
+
+  if (day.exercises && day.exercises.length > 0) {
+    const exerciseIds = day.exercises.map((ex: any) => ex.exerciseId);
+    const exercises = await Exercise.find({ _id: { $in: exerciseIds } }).select('name category').lean();
+    const nameMap = new Map(exercises.map((e: any) => [e._id.toString(), e.name]));
+
+    day.exercises = day.exercises.map((ex: any) => ({
+      ...ex,
+      exerciseId: ex.exerciseId?.toString() ?? '',
+      exerciseName: nameMap.get(ex.exerciseId?.toString() ?? '') ?? 'Unknown exercise',
+    }));
+  }
+
+  return day;
 }
 
 export async function createWorkoutDay(data: Partial<IWorkoutDay>): Promise<IWorkoutDay> {

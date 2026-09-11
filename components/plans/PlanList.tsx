@@ -12,9 +12,10 @@ interface Plan {
 
 interface PlanListProps {
   plans: Plan[];
+  onPlanDeleted?: () => void;
 }
 
-export default function PlanList({ plans }: PlanListProps) {
+export default function PlanList({ plans, onPlanDeleted }: PlanListProps) {
   if (plans.length === 0) {
     return (
       <div className="text-center text-slate-500">
@@ -27,7 +28,7 @@ export default function PlanList({ plans }: PlanListProps) {
   return (
     <div className="flex flex-col gap-3">
       {plans.map((plan) => (
-        <PlanCard key={plan._id} plan={plan} />
+        <PlanCard key={plan._id} plan={plan} onDeleted={() => onPlanDeleted?.()} />
       ))}
     </div>
   );

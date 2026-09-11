@@ -58,6 +58,14 @@ export async function POST(request: NextRequest) {
 
 export async function PUT() {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Unauthorized — sign in to seed exercises' },
+        { status: 401 }
+      );
+    }
+
     const result = await seedDefaultExercises(combinedExercises as any[]);
     const totalCount = await getExerciseCount();
     return NextResponse.json({

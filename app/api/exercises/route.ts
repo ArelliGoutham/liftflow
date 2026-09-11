@@ -7,28 +7,47 @@ import {
   seedDefaultExercises,
   getExerciseCount,
 } from '@/lib/db/repositories/exerciseRepository';
-import combinedExercises from '@/lib/exercises/combinedExercises';
+import { getExternalExercises } from '@/lib/exercises/externalExercises';
+import defaultExercises from '@/lib/exercises/defaultExercises';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category') || undefined;
     const sharedOnly = searchParams.get('sharedOnly') === 'true';
-    const muscle = searchParams.get('muscle') || undefined;
-    const equipment = searchParams.get('equipment') || undefined;
-    const level = searchParams.get('level') || undefined;
-    const search = searchParams.get('search') || undefined;
-    const limit = parseInt(searchParams.get('limit') || '100');
+    const limit = parseInt(searchParams.get('limit') || '200');
+    const source = searchParams.get('source') || 'all';
 
-    const exercises = await getAllExercises({ category, sharedOnly, muscle, equipment, level, search });
+    let dbExercises: any[] = [];
+    let externalExercises: any[] = [];
 
-    let result = exercises;
-    if (search) {
-      result = result.filter((e) =>
-        e.name.toLowerCase().includes(search!.toLowerCase())
-      );
+    if (source === 'db' || source === 'all') {
+      dbExercises = await getAllExercises({ category, sharedOnly });
     }
-    result = result.slice(0, limit);
+
+    if (source === 'external' || source === 'all') {
+      externalExercises = await getExternalExercises();
+      if (category) {
+        externalExercises = externalExercises.filter((e) => e.category === category);
+      }
+      if (sharedOnly) {
+        externalExercises = externalExercises.filter((e) => e.isShared);
+      }
+    }
+
+    const seen = new Set<string>();
+    const merged: any[] = [];
+
+    for (const ex of [...dbExercises, ...externalExercises]) {
+      const key = ex.name?.toLowerCase();
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        merged.push(ex);
+      }
+    }
+
+    merged.sort((a, b) => a.name.localeCompare(b.name));
+    const result = merged.slice(0, limit);
 
     return NextResponse.json(result);
   } catch {
@@ -66,14 +85,15 @@ export async function PUT() {
       );
     }
 
-    const result = await seedDefaultExercises(combinedExercises as any[]);
+    const result = await seedDefaultExercises(defaultExercises as any[]);
     const totalCount = await getExerciseCount();
     return NextResponse.json({
-      message: 'Exercises seeded successfully',
+      message: 'Default exercises seeded (hand-written set only)',
       seeded: result.total,
       inserted: result.inserted,
       updated: result.updated,
       totalInDatabase: totalCount,
+      note: 'External exercises from free-exercise-db are fetched at runtime, not stored in MongoDB',
     });
   } catch {
     return NextResponse.json({ error: 'Failed to seed exercises' }, { status: 500 });

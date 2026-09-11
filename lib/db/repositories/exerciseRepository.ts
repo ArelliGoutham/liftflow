@@ -45,33 +45,3 @@ export async function deleteExercise(id: string): Promise<any | null> {
   await connectToDatabase();
   return Exercise.findByIdAndDelete(id).lean() as unknown as Promise<any | null>;
 }
-
-export async function seedDefaultExercises(
-  exercises: Record<string, any>[]
-): Promise<{ inserted: number; updated: number; total: number }> {
-  await connectToDatabase();
-
-  let inserted = 0;
-  let updated = 0;
-
-  const bulkOps = exercises.map((exercise) => ({
-    updateOne: {
-      filter: { name: exercise.name },
-      update: { $set: exercise },
-      upsert: true,
-    },
-  }));
-
-  if (bulkOps.length > 0) {
-    const result = await Exercise.bulkWrite(bulkOps);
-    inserted = result.upsertedCount;
-    updated = result.modifiedCount;
-  }
-
-  return { inserted, updated, total: exercises.length };
-}
-
-export async function getExerciseCount(): Promise<number> {
-  await connectToDatabase();
-  return Exercise.countDocuments();
-}

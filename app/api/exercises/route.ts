@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { createExercise } from '@/lib/db/repositories/exerciseRepository';
+import { createExercise, getAllExercises } from '@/lib/db/repositories/exerciseRepository';
 import { getExternalExercises } from '@/lib/exercises/externalExercises';
-import defaultExercises from '@/lib/exercises/defaultExercises';
 
 export async function GET(request: NextRequest) {
   try {
@@ -75,30 +74,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(exercise, { status: 201 });
   } catch {
     return NextResponse.json({ error: 'Failed to create exercise' }, { status: 500 });
-  }
-}
-
-export async function PUT() {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized — sign in to seed exercises' },
-        { status: 401 }
-      );
-    }
-
-    const result = await seedDefaultExercises(defaultExercises as any[]);
-    const totalCount = await getExerciseCount();
-    return NextResponse.json({
-      message: 'Default exercises seeded (hand-written set only)',
-      seeded: result.total,
-      inserted: result.inserted,
-      updated: result.updated,
-      totalInDatabase: totalCount,
-      note: 'External exercises from free-exercise-db are fetched at runtime, not stored in MongoDB',
-    });
-  } catch {
-    return NextResponse.json({ error: 'Failed to seed exercises' }, { status: 500 });
   }
 }

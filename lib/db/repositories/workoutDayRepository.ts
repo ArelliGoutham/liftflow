@@ -72,7 +72,9 @@ export async function getWorkoutDayWithExerciseNames(id: string): Promise<any | 
     }
 
     // Combine names
-    const allNames = new Map<string, string>([...mongoNames, ...externalNames]);
+    const allNames = new Map<string, string>();
+    mongoNames.forEach((v, k) => allNames.set(k, v));
+    externalNames.forEach((v, k) => allNames.set(k, v));
 
     day.exercises = day.exercises.map((ex: any) => {
       const exId = ex.exerciseId?.toString() ?? '';

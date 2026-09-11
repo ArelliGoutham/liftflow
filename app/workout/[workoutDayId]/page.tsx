@@ -10,9 +10,11 @@ interface ExerciseInfo {
   exerciseName?: string;
   name?: string;
   order: number;
+  trackingMode?: 'reps' | 'duration';
   targetSets: number;
   targetRepetitions?: number;
-  targetDurationSeconds?: number;
+  targetDurationValue?: number;
+  durationUnit?: 'seconds' | 'minutes';
   restSeconds: number;
   notes?: string;
 }
@@ -160,6 +162,9 @@ export default function WorkoutSessionPage({ params }: { params: { workoutDayId:
                 targetSets={ex.targetSets}
                 targetReps={ex.targetRepetitions}
                 restSeconds={ex.restSeconds}
+                trackingMode={ex.trackingMode || 'reps'}
+                targetDurationValue={ex.targetDurationValue}
+                durationUnit={ex.durationUnit}
                 onLog={(data) => handleLog(ex.exerciseId, data)}
               />
             ))}

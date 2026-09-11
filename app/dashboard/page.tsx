@@ -181,7 +181,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-          ) : (
+          ) : todayWorkout.workoutDayId ? (
             <Link href={`/workout/${todayWorkout.workoutDayId}`} className="card group hover:border-lime/50 transition-colors p-6 block">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -196,6 +196,20 @@ export default function DashboardPage() {
                 <ArrowRight className="w-6 h-6 text-lime group-hover:translate-x-1 transition-transform" />
               </div>
             </Link>
+          ) : (
+            <div className="card border-slate-700 bg-slate-800/30 p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-slate-700/50 flex items-center justify-center">
+                  <Dumbbell className="w-7 h-7 text-slate-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-400">No workout scheduled for today</p>
+                  <Link href="/plans" className="text-lime text-sm underline mt-1 inline-block">
+                    Add a workout day for this weekday →
+                  </Link>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}

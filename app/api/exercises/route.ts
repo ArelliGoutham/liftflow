@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import {
-  getAllExercises,
-  createExercise,
-  seedDefaultExercises,
-  getExerciseCount,
-} from '@/lib/db/repositories/exerciseRepository';
+import { createExercise } from '@/lib/db/repositories/exerciseRepository';
 import { getExternalExercises } from '@/lib/exercises/externalExercises';
 import defaultExercises from '@/lib/exercises/defaultExercises';
 
@@ -16,29 +11,28 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category') || undefined;
     const sharedOnly = searchParams.get('sharedOnly') === 'true';
     const limit = parseInt(searchParams.get('limit') || '200');
-    const source = searchParams.get('source') || 'all';
 
-    let dbExercises: any[] = [];
-    let externalExercises: any[] = [];
+    let exercises = await getExternalExercises();
 
-    if (source === 'db' || source === 'all') {
-      dbExercises = await getAllExercises({ category, sharedOnly });
-    }
+    // Normalize: external exercises use "id" field, map to "_id" for client compatibility
+    exercises = exercises.map((e: any) => ({
+      ...e,
+      _id: e._id || e.id,
+    }));
 
-    if (source === 'external' || source === 'all') {
-      externalExercises = await getExternalExercises();
-      if (category) {
-        externalExercises = externalExercises.filter((e) => e.category === category);
-      }
-      if (sharedOnly) {
-        externalExercises = externalExercises.filter((e) => e.isShared !== false);
-      }
-    }
+    // Also include user-created exercises from MongoDB
+    const { getAllExercises } = await import('@/lib/db/repositories/exerciseRepository');
+    const dbExercises = await getAllExercises({ category, sharedOnly });
+    const dbNormalized = dbExercises.map((e: any) => ({
+      ...e,
+      _id: e._id?.toString(),
+      sourceIds: e.sourceIds || {},
+    }));
 
     const seen = new Set<string>();
     const merged: any[] = [];
 
-    for (const ex of [...dbExercises, ...externalExercises]) {
+    for (const ex of [...dbNormalized, ...exercises]) {
       const key = ex.name?.toLowerCase();
       if (key && !seen.has(key)) {
         seen.add(key);
@@ -46,8 +40,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    merged.sort((a, b) => a.name.localeCompare(b.name));
-    const result = merged.slice(0, limit);
+    // Apply filters
+    let result = merged;
+    if (category) {
+      result = result.filter((e) => e.category === category);
+    }
+    if (sharedOnly) {
+      result = result.filter((e) => e.isShared !== false);
+    }
+
+    result.sort((a, b) => a.name.localeCompare(b.name));
+    result = result.slice(0, limit);
 
     return NextResponse.json(result);
   } catch {

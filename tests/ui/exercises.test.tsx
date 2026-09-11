@@ -48,7 +48,7 @@ describe('Exercise List', () => {
   it('displays form guide text for each exercise', () => {
     render(<ExerciseList exercises={mockExercises} />);
 
-    const formGuideTexts = screen.getAllByText(/View form guide/);
+    const formGuideTexts = screen.getAllByText(/View guide/);
     expect(formGuideTexts.length).toBe(2);
   });
 });

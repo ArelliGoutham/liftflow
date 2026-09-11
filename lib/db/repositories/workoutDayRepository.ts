@@ -5,7 +5,7 @@ import type { IWorkoutDay, IWorkoutExercise } from '@/types';
 
 export async function getPlanWorkoutDays(planId: string): Promise<IWorkoutDay[]> {
   await connectToDatabase();
-  return WorkoutDay.find({ planId }).sort({ weekNumber: 1, dayOfWeek: 1 }).lean() as Promise<IWorkoutDay[]>;
+  return WorkoutDay.find({ planId }).sort({ weekNumber: 1, dayOfWeek: 1 }).lean() as unknown as Promise<IWorkoutDay[]>;
 }
 
 export async function getWorkoutDayById(id: string): Promise<IWorkoutDay | null> {
@@ -44,12 +44,12 @@ export async function createWorkoutDay(data: Partial<IWorkoutDay>): Promise<IWor
 
 export async function updateWorkoutDay(id: string, data: Partial<IWorkoutDay>): Promise<IWorkoutDay | null> {
   await connectToDatabase();
-  return WorkoutDay.findByIdAndUpdate(id, data, { new: true }).lean() as Promise<IWorkoutDay | null>;
+  return WorkoutDay.findByIdAndUpdate(id, data, { new: true }).lean() as unknown as Promise<IWorkoutDay | null>;
 }
 
 export async function deleteWorkoutDay(id: string): Promise<IWorkoutDay | null> {
   await connectToDatabase();
-  return WorkoutDay.findByIdAndDelete(id).lean() as Promise<IWorkoutDay | null>;
+  return WorkoutDay.findByIdAndDelete(id).lean() as unknown as Promise<IWorkoutDay | null>;
 }
 
 export async function deletePlanWorkoutDays(planId: string): Promise<void> {

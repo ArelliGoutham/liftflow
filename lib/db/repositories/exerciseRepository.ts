@@ -13,12 +13,12 @@ export async function getAllExercises(filter?: { category?: string; sharedOnly?:
     query.isShared = true;
   }
 
-  return Exercise.find(query).sort({ name: 1 }).lean() as Promise<IExercise[]>;
+  return Exercise.find(query).sort({ name: 1 }).lean() as unknown as Promise<IExercise[]>;
 }
 
 export async function getExerciseById(id: string): Promise<IExercise | null> {
   await connectToDatabase();
-  return Exercise.findById(id).lean() as Promise<IExercise | null>;
+  return Exercise.findById(id).lean() as unknown as Promise<IExercise | null>;
 }
 
 export async function createExercise(data: Partial<IExercise>): Promise<IExercise> {
@@ -30,12 +30,12 @@ export async function createExercise(data: Partial<IExercise>): Promise<IExercis
 
 export async function updateExercise(id: string, data: Partial<IExercise>): Promise<IExercise | null> {
   await connectToDatabase();
-  return Exercise.findByIdAndUpdate(id, data, { new: true }).lean() as Promise<IExercise | null>;
+  return Exercise.findByIdAndUpdate(id, data, { new: true }).lean() as unknown as Promise<IExercise | null>;
 }
 
 export async function deleteExercise(id: string): Promise<IExercise | null> {
   await connectToDatabase();
-  return Exercise.findByIdAndDelete(id).lean() as Promise<IExercise | null>;
+  return Exercise.findByIdAndDelete(id).lean() as unknown as Promise<IExercise | null>;
 }
 
 export async function seedDefaultExercises(exercises: Omit<IExercise, '_id' | 'createdAt' | 'updatedAt'>[]): Promise<void> {

@@ -228,7 +228,7 @@ export default function DashboardPage() {
                   <p className="font-medium text-amber-300">{day.workoutTitle}</p>
                   <p className="text-xs text-slate-500">Missed on {day.dayLabel} - Still within grace period</p>
                 </div>
-                <span className="text-amber-400 text-sm font-medium flex-shrink-0">Do now -></span>
+                <span className="text-amber-400 text-sm font-medium flex-shrink-0">Do now {'\u2192'}</span>
               </Link>
             ))}
           </div>
@@ -251,12 +251,12 @@ export default function DashboardPage() {
               {data.activePlan.startDate && (
                 <p className="text-xs text-slate-500 mt-1">
                   {data.activePlan.startDate}
-                  {data.activePlan.endDate ? ' -> ' + data.activePlan.endDate : ' -> open-ended'}
+                  {data.activePlan.endDate ? ' \u2192 ' + data.activePlan.endDate : ' \u2192 open-ended'}
                 </p>
               )}
             </div>
             <Link href={`/plans/${data.activePlan._id}`} className="text-sm text-lime hover:text-lime/80 font-medium underline flex-shrink-0">
-              View ->
+              View {'\u2192'}
             </Link>
           </div>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4">

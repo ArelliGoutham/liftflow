@@ -16,7 +16,7 @@ export default function UserMenu({ compact = false }: UserMenuProps) {
   }
 
   if (!session?.user) {
-    return <Link href="/" className="btn-primary">Sign in</Link>;
+    return <Link href="/login" className="btn-primary">Sign in</Link>;
   }
 
   const displayName = session.user.name || 'User';

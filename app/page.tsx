@@ -1,18 +1,23 @@
-import SignInButton from '@/components/auth/SignInButton';
 import Link from 'next/link';
+import { Dumbbell } from 'lucide-react';
 
 export default function HomePage() {
   return (
     <div className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center gap-12 text-center py-12">
-      {/* Editorial heading */}
+      {/* Logo + heading */}
       <div className="space-y-4 max-w-2xl">
-        <div className="eyebrow">Fitness Tracking</div>
+        <div className="flex items-center justify-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-lime/20 flex items-center justify-center">
+            <Dumbbell className="w-6 h-6 text-lime" />
+          </div>
+          <div className="eyebrow">Fitness Tracking</div>
+        </div>
         <h1 className="page-title">
           Master your form, track your progress
         </h1>
         <p className="text-lg text-slate-300">
-          Access thousands of exercise guides with detailed form cues, safety notes, and 
-          breathing techniques. Plan your workouts with precision, log every rep, and 
+          Access thousands of exercise guides with detailed form cues, safety notes, and
+          breathing techniques. Plan your workouts with precision, log every rep, and
           watch your strength grow.
         </p>
       </div>
@@ -44,7 +49,9 @@ export default function HomePage() {
 
       {/* CTAs */}
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-center w-full max-w-sm">
-        <SignInButton />
+        <Link href="/login" className="btn-primary">
+          Sign in
+        </Link>
         <Link href="/exercises" className="btn btn-secondary">
           Browse exercise library
         </Link>

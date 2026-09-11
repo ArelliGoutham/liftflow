@@ -8,6 +8,10 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'LiftFlow',
   description: 'Track your workout plans, form, and progress',
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default async function RootLayout({

@@ -1,30 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ExerciseFilter from '@/components/exercises/ExerciseFilter';
 import ExerciseList from '@/components/exercises/ExerciseList';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, Search } from 'lucide-react';
 
 interface ExerciseSummary {
   _id: string;
   name: string;
   category: string;
+  primaryMuscles?: string[];
+  equipment?: string;
+  level?: string;
+  imageUrls?: string[];
 }
+
+const PAGE_SIZE = 60;
 
 export default function ExercisesPage() {
   const [category, setCategory] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [retryCounter, setRetryCounter] = useState(0);
   const [exercises, setExercises] = useState<ExerciseSummary[]>([]);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const filteredExercises = exercises.filter((ex) =>
-    ex.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
+    abortControllerRef.current = controller;
     const signal = controller.signal;
 
     async function fetchExercises() {
@@ -33,62 +38,56 @@ export default function ExercisesPage() {
       try {
         const params = new URLSearchParams();
         params.set('sharedOnly', 'true');
-        if (category) {
-          params.set('category', category);
-        }
+        if (category) params.set('category', category);
+        params.set('limit', '1376');
 
         const res = await fetch(`/api/exercises?${params.toString()}`, { signal });
 
         if (signal.aborted) return;
-
-        if (!res.ok) {
-          throw new Error('Failed to fetch exercises');
-        }
+        if (!res.ok) throw new Error('Failed to fetch exercises');
 
         const data = await res.json();
-
         if (signal.aborted) return;
+        if (!Array.isArray(data)) throw new Error('Invalid response format');
 
-        if (!Array.isArray(data)) {
-          throw new Error('Invalid response format');
-        }
-
-        const validExercises = data.map((ex, index) => {
-          if (ex === null || ex === undefined) {
-            throw new Error(`Invalid exercise at index ${index}: null or undefined`);
-          }
-          if (typeof ex._id !== 'string' || typeof ex.name !== 'string' || typeof ex.category !== 'string') {
-            throw new Error(`Invalid exercise at index ${index}: missing or invalid required fields`);
-          }
-          return ex as ExerciseSummary;
-        });
-
-        if (signal.aborted) return;
+        const validExercises = data
+          .filter((ex) => ex && typeof ex._id === 'string' && typeof ex.name === 'string')
+          .map((ex) => ({
+            _id: ex._id,
+            name: ex.name,
+            category: ex.category || 'upper-body',
+            primaryMuscles: ex.primaryMuscles,
+            equipment: ex.equipment,
+            level: ex.level,
+            imageUrls: ex.imageUrls,
+          })) as ExerciseSummary[];
 
         setExercises(validExercises);
+        setVisibleCount(PAGE_SIZE);
       } catch (err) {
         if (signal.aborted) return;
+        if (err instanceof Error && err.name === 'AbortError') return;
         setError('Failed to load exercises. Please try again.');
         setExercises([]);
       } finally {
-        if (!signal.aborted) {
-          setLoading(false);
-        }
+        if (!signal.aborted) setLoading(false);
       }
     }
 
     fetchExercises();
 
-    return () => {
-      controller.abort();
-    };
+    return () => controller.abort();
   }, [category, retryCounter]);
 
-  const handleRetry = () => {
-    setRetryCounter((prev) => prev + 1);
-  };
+  const filteredExercises = exercises.filter((ex) =>
+    ex.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const handleClearFilter = () => {
+  const visibleExercises = filteredExercises.slice(0, visibleCount);
+
+  const handleRetry = () => setRetryCounter((prev) => prev + 1);
+
+  const handleClearFilters = () => {
     setCategory('');
     setSearchQuery('');
   };
@@ -99,10 +98,8 @@ export default function ExercisesPage() {
         <h1 className="page-title">Exercise Library</h1>
         <p className="mt-2 text-slate-400">
           {!error && !loading && filteredExercises.length > 0
-            ? `Showing ${filteredExercises.length} exercise${filteredExercises.length === 1 ? '' : 's'}`
-            : category
-              ? 'Browse exercises in this category'
-              : 'Browse our collection of exercises'}
+            ? `Showing ${visibleExercises.length} of ${filteredExercises.length} exercises`
+            : 'Browse over 1,300 exercises with form guides, images, and instructions'}
         </p>
       </div>
 
@@ -112,21 +109,29 @@ export default function ExercisesPage() {
         <label htmlFor="search-exercises" className="text-sm text-slate-300">
           Search exercises
         </label>
-        <input
-          id="search-exercises"
-          type="text"
-          placeholder="Filter by name..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="input"
-        />
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <input
+            id="search-exercises"
+            type="text"
+            placeholder="Filter by name..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setVisibleCount(PAGE_SIZE);
+            }}
+            className="input pl-10"
+          />
+        </div>
       </div>
 
       {loading && (
         <div className="space-y-3 animate-pulse">
-          <div className="h-16 rounded-xl bg-slate-700" />
-          <div className="h-16 rounded-xl bg-slate-700" />
-          <div className="h-16 rounded-xl bg-slate-700" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-40 rounded-xl bg-slate-700" />
+            ))}
+          </div>
         </div>
       )}
 
@@ -140,8 +145,7 @@ export default function ExercisesPage() {
                 onClick={handleRetry}
                 className="mt-3 inline-flex items-center gap-2 text-sm text-red-400 hover:text-red-300 transition-colors"
               >
-                <RefreshCw className="w-4 h-4" />
-                Try again
+                <RefreshCw className="w-4 h-4" /> Try again
               </button>
             </div>
           </div>
@@ -155,21 +159,28 @@ export default function ExercisesPage() {
               ? 'No exercises match your search.'
               : category
                 ? 'No exercises found in this category.'
-                : 'No exercises available.'}
+                : 'No exercises available. Run the seeding script first.'}
           </p>
           {(category || searchQuery) && (
-            <button
-              onClick={handleClearFilter}
-              className="text-lime hover:text-lime/80 text-sm font-medium"
-            >
+            <button onClick={handleClearFilters} className="text-lime hover:text-lime/80 text-sm font-medium">
               Clear filters
             </button>
           )}
         </div>
       )}
 
-      {!loading && !error && filteredExercises.length > 0 && (
-        <ExerciseList exercises={filteredExercises} />
+      {!loading && !error && visibleExercises.length > 0 && (
+        <>
+          <ExerciseList exercises={visibleExercises} />
+          {visibleCount < filteredExercises.length && (
+            <button
+              onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+              className="btn-secondary w-full mt-2"
+            >
+              Load more ({filteredExercises.length - visibleCount} remaining)
+            </button>
+          )}
+        </>
       )}
     </div>
   );

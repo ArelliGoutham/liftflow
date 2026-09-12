@@ -93,13 +93,18 @@ export function computeWeekSchedule(
     if (workoutDay && !workoutDay.isRest) {
       for (const session of sessions) {
         if (session.workoutDayId === workoutDay._id && session.completedAt) {
+          // If the session was completed within 24h of the scheduled date, it's on-time
+          // Otherwise it's still completed but within grace period (catch-up)
           const sessionDate = parseDate(session.completedAt.split('T')[0]);
           const gap = hoursBetween(sessionDate, date);
-          if (gap <= GRACE_PERIOD_HOURS) {
-            isCompleted = true;
-            if (gap > 0) isInGracePeriod = true;
-            break;
+          isCompleted = true;
+          if (gap > GRACE_PERIOD_HOURS) {
+            // Completed late — still counts as done, mark as catch-up completion
+            isInGracePeriod = true;
+          } else if (gap > 0) {
+            isInGracePeriod = true;
           }
+          break;
         }
       }
     }

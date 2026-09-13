@@ -51,7 +51,7 @@ export class GeminiProvider implements AIProvider {
       maxOutputTokens: options?.maxOutputTokens ?? 500,
       stopWhen: stepCountIs(options?.maxSteps ?? 5),
       tools: options?.tools,
-      onFinish: options?.onFinish,
+      onFinish: options?.onFinish as any,
     });
     return result as unknown as AIStreamResult;
   }

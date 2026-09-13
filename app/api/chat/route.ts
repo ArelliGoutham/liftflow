@@ -63,9 +63,11 @@ export async function POST(request: Request) {
       maxOutputTokens: 800,
       maxSteps: 5,
       tools,
-      onFinish: async (completion) => {
-        if (completion.text) {
-          await saveChatMessage(userId, 'assistant', completion.text);
+      onFinish: async (completion: any) => {
+        // v7 tool-calling: completion may have .text or .output
+        const text = completion.text || completion.output || '';
+        if (text) {
+          await saveChatMessage(userId, 'assistant', text);
         }
       },
     });

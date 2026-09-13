@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
 
     const days = await getPlanWorkoutDays(planId);
     return NextResponse.json(days);
-  } catch {
+  } catch (err) {
+    console.error('[workout-days GET] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to fetch workout days' }, { status: 500 });
   }
 }
@@ -36,7 +37,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(day, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error('[workout-days POST] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to create workout day' }, { status: 500 });
   }
 }

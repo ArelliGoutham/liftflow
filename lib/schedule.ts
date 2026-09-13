@@ -1,4 +1,4 @@
-import type { DaySchedule, WeekSchedule } from '@/types';
+import type { IDaySchedule, IWeekSchedule } from '@/types';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DAY_FULL_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -53,7 +53,7 @@ export function computeWeekSchedule(
   workoutDays: WorkoutDayInfo[],
   sessions: SessionInfo[],
   today: Date = new Date()
-): WeekSchedule {
+): IWeekSchedule {
   const todayStr = toDateString(today);
   const todayDayOfWeek = getMondayBasedDay(today);
 
@@ -71,7 +71,7 @@ export function computeWeekSchedule(
   const weekStart = new Date(today);
   weekStart.setDate(today.getDate() + mondayOffset);
 
-  const days: DaySchedule[] = [];
+  const days: IDaySchedule[] = [];
   let todayIndex = -1;
 
   for (let i = 0; i < 7; i++) {

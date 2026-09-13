@@ -4,32 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Dumbbell, AlertCircle } from 'lucide-react';
 import ExerciseLogForm from '@/components/workout/ExerciseLogForm';
-
-interface ExerciseInfo {
-  exerciseId: string;
-  exerciseName?: string;
-  name?: string;
-  order: number;
-  trackingMode?: 'reps' | 'duration';
-  targetSets: number;
-  targetRepetitions?: number;
-  targetDurationValue?: number;
-  durationUnit?: 'seconds' | 'minutes';
-  restSeconds: number;
-  notes?: string;
-}
-
-interface WorkoutDay {
-  _id: string;
-  planId?: string;
-  title: string;
-  warmupInstructions?: string;
-  cardioInstructions?: string;
-  exercises: ExerciseInfo[];
-}
+import type { IWorkoutDayClient } from '@/types';
 
 export default function WorkoutSessionPage({ params }: { params: { workoutDayId: string } }) {
-  const [workoutDay, setWorkoutDay] = useState<WorkoutDay | null>(null);
+  const [workoutDay, setWorkoutDay] = useState<IWorkoutDayClient | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [logIds, setLogIds] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);

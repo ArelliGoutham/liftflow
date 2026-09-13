@@ -1,15 +1,13 @@
 import ExerciseDetail from '@/components/exercises/ExerciseDetail';
 import { getExerciseById } from '@/lib/db/repositories/exerciseRepository';
 import { getExternalExerciseById } from '@/lib/exercises/externalExercises';
+import { isMongoId } from '@/lib/utils';
+import type { IExternalExercise } from '@/types';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-function isMongoId(id: string): boolean {
-  return /^[0-9a-fA-F]{24}$/.test(id);
-}
-
 export default async function ExerciseDetailPage({ params }: { params: { id: string } }) {
-  let exercise: any = null;
+  let exercise: IExternalExercise | null = null;
 
   if (isMongoId(params.id)) {
     exercise = await getExerciseById(params.id);

@@ -1,3 +1,5 @@
+/** Active AI provider — set via AI_PROVIDER env var (default: gemini) */
+export const AI_PROVIDER = process.env.AI_PROVIDER || 'gemini';
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
 

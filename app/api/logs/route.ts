@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
 
     const logs = await getLogsByExercise(session.user.id, exerciseId);
     return NextResponse.json(logs);
-  } catch {
+  } catch (err) {
+    console.error('[logs GET] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to fetch logs' }, { status: 500 });
   }
 }
@@ -37,7 +38,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(log, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error('[logs POST] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to create log' }, { status: 500 });
   }
 }

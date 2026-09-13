@@ -5,37 +5,14 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Dumbbell, Plus, AlertCircle, RefreshCw, CalendarClock, Moon, ArrowRight } from 'lucide-react';
 import WeekStrip from '@/components/dashboard/WeekStrip';
-
-interface DaySchedule {
-  date: string;
-  dayOfWeek: number;
-  dayLabel: string;
-  workoutDayId: string | null;
-  workoutTitle: string | null;
-  isRest: boolean;
-  isToday: boolean;
-  isPast: boolean;
-  isFuture: boolean;
-  isCompleted: boolean;
-  isInGracePeriod: boolean;
-  isMissed: boolean;
-  isCatchUpEligible: boolean;
-}
-
-interface WeekSchedule {
-  days: DaySchedule[];
-  todayIndex: number;
-  missedDays: DaySchedule[];
-  planExpired: boolean;
-  planExpiryMessage: string | null;
-}
+import type { IDaySchedule, IWeekSchedule } from '@/types';
 
 interface DashboardData {
   activePlan: { _id: string; name: string; isActive: boolean; startDate?: string; endDate?: string } | null;
   workoutDays: { _id: string; title: string; weekNumber: number; dayOfWeek: number }[];
   totalWorkouts: number;
   completedWorkouts: number;
-  weekSchedule: WeekSchedule | null;
+  weekSchedule: IWeekSchedule | null;
 }
 
 export default function DashboardPage() {

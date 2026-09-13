@@ -1,4 +1,4 @@
-import type { IExercise } from '@/types';
+import type { IExternalExercise } from '@/types';
 
 // Canonical exercise database — 1,376 exercises merged from:
 //   - free-exercise-db (public domain, CC0)
@@ -8,11 +8,11 @@ import type { IExercise } from '@/types';
 const EXERCISE_DB_URL =
   'https://raw.githubusercontent.com/ArelliGoutham/exercise-database/main/dist/exercises.json';
 
-let cachedExercises: any[] | null = null;
+let cachedExercises: IExternalExercise[] | null = null;
 let cacheTime = 0;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
-export async function getExternalExercises(): Promise<any[]> {
+export async function getExternalExercises(): Promise<IExternalExercise[]> {
   if (cachedExercises && Date.now() - cacheTime < CACHE_TTL_MS) {
     return cachedExercises;
   }
@@ -24,9 +24,9 @@ export async function getExternalExercises(): Promise<any[]> {
 
     if (!Array.isArray(data)) throw new Error('Invalid response format');
 
-    cachedExercises = data;
+    cachedExercises = data as IExternalExercise[];
     cacheTime = Date.now();
-    return data;
+    return data as IExternalExercise[];
   } catch (err) {
     console.error('[externalExercises] Fetch failed:', err instanceof Error ? err.message : err);
     if (cachedExercises) return cachedExercises;
@@ -34,11 +34,11 @@ export async function getExternalExercises(): Promise<any[]> {
   }
 }
 
-export async function getExternalExerciseById(id: string): Promise<any | null> {
+export async function getExternalExerciseById(id: string): Promise<IExternalExercise | null> {
   const all = await getExternalExercises();
   return (
     all.find(
-      (e: any) =>
+      (e) =>
         e.id === id ||
         e._id === id ||
         e.sourceIds?.freeExerciseDb === id ||

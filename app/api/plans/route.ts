@@ -12,7 +12,8 @@ export async function GET() {
 
     const plans = await getUserPlans(session.user.id);
     return NextResponse.json(plans);
-  } catch {
+  } catch (err) {
+    console.error('[plans GET] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to fetch plans' }, { status: 500 });
   }
 }
@@ -31,7 +32,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(plan, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error('[plans POST] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to create plan' }, { status: 500 });
   }
 }

@@ -12,10 +12,8 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.69",
-    "@ai-sdk/openai": "^4.0.66",
     "@ai-sdk/react": "^4.0.102",
     "ai": "^7.0.99",
-    "class-variance-authority": "^0.7.0",
     "lucide-react": "^0.395.0",
     "mongoose": "^8.4.3",
     "next": "14.2.5",

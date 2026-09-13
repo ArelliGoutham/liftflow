@@ -1,17 +1,10 @@
 'use client';
 
 import PlanCard from './PlanCard';
-
-interface Plan {
-  _id: string;
-  name: string;
-  goal?: string;
-  isActive: boolean;
-  updatedAt: string;
-}
+import type { IPlanSummary } from '@/types';
 
 interface PlanListProps {
-  plans: Plan[];
+  plans: IPlanSummary[];
   onPlanDeleted?: () => void;
 }
 

@@ -3,26 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, GripVertical, AlertCircle, Save, Clock, Dumbbell } from 'lucide-react';
 import Link from 'next/link';
-
-interface WorkoutExercise {
-  exerciseId: string;
-  exerciseName?: string;
-  order: number;
-  trackingMode: 'reps' | 'duration';
-  targetSets: number;
-  targetRepetitions?: number;
-  targetDurationValue?: number;
-  durationUnit: 'seconds' | 'minutes';
-  restSeconds: number;
-  notes?: string;
-}
-
-interface ExerciseOption {
-  _id: string;
-  id?: string;
-  name: string;
-  category: string;
-}
+import type { IWorkoutExerciseWithName, IExerciseOption } from '@/types';
 
 interface WorkoutDayEditorProps {
   workoutDayId: string;
@@ -30,8 +11,8 @@ interface WorkoutDayEditorProps {
 }
 
 export default function WorkoutDayEditor({ workoutDayId, dayTitle }: WorkoutDayEditorProps) {
-  const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
-  const [availableExercises, setAvailableExercises] = useState<ExerciseOption[]>([]);
+  const [exercises, setExercises] = useState<IWorkoutExerciseWithName[]>([]);
+  const [availableExercises, setAvailableExercises] = useState<IExerciseOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +26,7 @@ export default function WorkoutDayEditor({ workoutDayId, dayTitle }: WorkoutDayE
       if (!res.ok) throw new Error('Failed');
       const data = await res.json();
 
-      const existing: WorkoutExercise[] = (data.exercises || []).map((ex: any, i: number) => ({
+      const existing: IWorkoutExerciseWithName[] = (data.exercises || []).map((ex: any, i: number) => ({
         exerciseId: ex.exerciseId?.toString() ?? '',
         exerciseName: ex.exerciseName ?? '',
         order: ex.order ?? i,
@@ -129,7 +110,7 @@ export default function WorkoutDayEditor({ workoutDayId, dayTitle }: WorkoutDayE
     setSaveSuccess(false);
   }
 
-  function updateExercise(index: number, field: keyof WorkoutExercise, value: string | number) {
+  function updateExercise(index: number, field: keyof IWorkoutExerciseWithName, value: string | number) {
     setExercises((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };

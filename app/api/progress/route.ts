@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
 
     const logs = await getLogsByExercise(session.user.id, exerciseId, 100);
     return NextResponse.json(logs);
-  } catch {
+  } catch (err) {
+    console.error('[progress GET] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to fetch progress' }, { status: 500 });
   }
 }

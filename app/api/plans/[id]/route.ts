@@ -16,7 +16,8 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     }
 
     return NextResponse.json(plan);
-  } catch {
+  } catch (err) {
+    console.error('[plans/[id] GET] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to fetch plan' }, { status: 500 });
   }
 }
@@ -35,7 +36,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     return NextResponse.json(plan);
-  } catch {
+  } catch (err) {
+    console.error('[plans/[id] PUT] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to update plan' }, { status: 500 });
   }
 }
@@ -53,7 +55,8 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
     }
 
     return NextResponse.json({ message: 'Deleted' });
-  } catch {
+  } catch (err) {
+    console.error('[plans/[id] DELETE] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to delete plan' }, { status: 500 });
   }
 }

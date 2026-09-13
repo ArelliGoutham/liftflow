@@ -15,7 +15,8 @@ export async function DELETE() {
       message: 'Chat history cleared',
       deleted: deletedCount,
     });
-  } catch {
+  } catch (err) {
+    console.error('[chat/clear DELETE] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to clear chat history' }, { status: 500 });
   }
 }

@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
     result = result.slice(0, limit);
 
     return NextResponse.json(result);
-  } catch {
+  } catch (err) {
+    console.error('[exercises GET] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to fetch exercises' }, { status: 500 });
   }
 }
@@ -72,7 +73,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(exercise, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error('[exercises POST] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to create exercise' }, { status: 500 });
   }
 }

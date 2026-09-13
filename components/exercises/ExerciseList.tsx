@@ -1,21 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
-import { Dumbbell, Activity, Zap } from 'lucide-react';
-
-interface Exercise {
-  _id: string;
-  name: string;
-  category: string;
-  primaryMuscles?: string[];
-  equipment?: string;
-  level?: string;
-  imageUrls?: string[];
-}
+import { Dumbbell, Activity } from 'lucide-react';
+import type { IExerciseSummary } from '@/types';
 
 interface ExerciseListProps {
-  exercises: Exercise[];
+  exercises: IExerciseSummary[];
 }
 
 const categoryColors: Record<string, { bg: string; text: string; label: string }> = {

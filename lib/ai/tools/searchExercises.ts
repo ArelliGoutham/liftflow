@@ -10,7 +10,7 @@ export const searchExercisesTool: ToolDefinition = {
   name: 'searchExercises',
   description: 'Search the exercise library by name, muscle group, equipment, or category. Returns matching exercises with their IDs, names, and categories. Use this when a user asks about exercises for a specific muscle or with specific equipment.',
   parameters: z.object({
-    query: z.string().optional().describe('Search term to match exercise names (case-insensitive)'),
+    query: z.string().optional().describe('Search term to match exercise names (case-insensitive). Examples: "bench press", "squat", "deadlift", "curl"'),
     muscle: z.string().optional().describe('Filter by primary muscle group (e.g., "hamstrings", "chest", "quadriceps")'),
     equipment: z.string().optional().describe('Filter by equipment (e.g., "barbell", "dumbbell", "body only")'),
     category: z.string().optional().describe('Filter by category (e.g., "upper-body", "lower-body", "core", "cardio")'),
@@ -18,8 +18,10 @@ export const searchExercisesTool: ToolDefinition = {
   async execute(params) {
     let exercises = await getExternalExercises();
 
-    if (params.query) {
-      const q = params.query.toLowerCase();
+    // Support both 'query' and 'name' — some models send 'name' instead
+    const searchTerm = params.query || (params as any).name;
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
       exercises = exercises.filter((e: any) => e.name?.toLowerCase().includes(q));
     }
     if (params.muscle) {

@@ -1,5 +1,9 @@
 import mongoose from 'mongoose';
 
+/**
+ * Creates required MongoDB indexes on plans, workoutdays, workoutsessions, exerciselogs, and exercises collections.
+ * @returns Promise that resolves when all indexes have been created
+ */
 const createIndexes = async () => {
   const db = mongoose.connection.db;
   if (!db) return;

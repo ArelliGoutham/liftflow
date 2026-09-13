@@ -1,8 +1,7 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import type { Session } from 'next-auth';
-import connectToDatabase from '@/lib/db/connection';
-import User from '@/lib/db/models/User';
+import { findUserByEmail, createUser } from '@/lib/db/repositories/userRepository';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -16,16 +15,15 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider !== 'google') return false;
 
       try {
-        await connectToDatabase();
-
-        const existingUser = await User.findOne({ email: user.email });
+        const email = user.email ?? '';
+        const existingUser = await findUserByEmail(email);
 
         if (!existingUser) {
-          await User.create({
+          await createUser({
             authProviderId: account.providerAccountId,
             name: user.name?.trim() || 'User',
-            email: user.email?.toLowerCase().trim() || '',
-            image: user.image,
+            email: email.toLowerCase().trim(),
+            image: user.image ?? undefined,
           });
         }
 
@@ -36,8 +34,7 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session }): Promise<Session> {
       if (session.user?.email) {
-        await connectToDatabase();
-        const dbUser = await User.findOne({ email: session.user.email });
+        const dbUser = await findUserByEmail(session.user.email);
         if (dbUser) {
           session.user.id = dbUser._id.toString();
         }

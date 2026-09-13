@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Dumbbell, LayoutGrid, CalendarDays, TrendingUp, Settings } from 'lucide-react';
 import UserMenu from '@/components/auth/UserMenu';
+import ChatAssistant from '@/components/chat/ChatAssistant';
 
 interface NavItem {
   label: string;
@@ -126,6 +127,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
         )}
       </div>
+
+      {/* Chat assistant — only when authenticated */}
+      {isAuthenticated && !isLanding && <ChatAssistant />}
     </div>
   );
 }

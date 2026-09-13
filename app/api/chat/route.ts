@@ -1,8 +1,8 @@
-import { createOpenAI } from '@ai-sdk/openai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText } from 'ai';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { OPENAI_API_KEY, SYSTEM_PROMPT } from '@/lib/ai/config';
+import { GEMINI_API_KEY, SYSTEM_PROMPT } from '@/lib/ai/config';
 import { getExternalExercises } from '@/lib/exercises/externalExercises';
 
 export async function POST(request: Request) {
@@ -12,9 +12,9 @@ export async function POST(request: Request) {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    if (!OPENAI_API_KEY) {
+    if (!GEMINI_API_KEY) {
       return new Response(
-        JSON.stringify({ error: 'OpenAI API key not configured' }),
+        JSON.stringify({ error: 'Gemini API key not configured. Get a free key at https://aistudio.google.com/apikey' }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -43,10 +43,10 @@ export async function POST(request: Request) {
 
     const systemPrompt = `${SYSTEM_PROMPT}\n\nHere is a summary of exercises available in the LiftFlow library:\n${exerciseSummaries}`;
 
-    const openai = createOpenAI({ apiKey: OPENAI_API_KEY });
+    const google = createGoogleGenerativeAI({ apiKey: GEMINI_API_KEY });
 
     const result = streamText({
-      model: openai('gpt-4o-mini'),
+      model: google('gemini-2.0-flash'),
       system: systemPrompt,
       messages,
       temperature: 0.7,

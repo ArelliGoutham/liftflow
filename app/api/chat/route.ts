@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     const result = await provider.streamChat(systemPrompt, modelMessages, {
       temperature: 0.7,
       maxOutputTokens: 800,
-      maxSteps: 5,
+      maxSteps: 8,
       tools,
       onFinish: async (completion: any) => {
         // v7 tool-calling: completion may have .text or .output

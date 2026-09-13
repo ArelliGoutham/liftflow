@@ -27,6 +27,21 @@ export const allTools: ToolDefinition[] = [
 ];
 
 /**
+ * Converts snake_case keys to camelCase for tool parameters.
+ * Gemini often sends snake_case even when the schema uses camelCase.
+ */
+function toCamelCase(obj: any): any {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(toCamelCase);
+  const result: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+    result[camelKey] = toCamelCase(value);
+  }
+  return result;
+}
+
+/**
  * Converts ToolDefinitions to the format expected by the AI SDK's streamText.
  * Each tool becomes a zod-schema-validated function the model can call.
  * @param context - User session context (userId, email, name)
@@ -40,11 +55,14 @@ export function getAITools(context: ToolContext) {
       parameters: tool.parameters,
       execute: async (params: any) => {
         try {
-          const result = await tool.execute(params, context);
+          const normalizedParams = toCamelCase(params);
+          console.log(`[AI tool: ${tool.name}] Params:`, JSON.stringify(normalizedParams));
+          const result = await tool.execute(normalizedParams, context);
+          console.log(`[AI tool: ${tool.name}] Result:`, JSON.stringify(result).slice(0, 200));
           return JSON.stringify(result);
         } catch (err) {
           console.error(`[AI tool: ${tool.name}] Error:`, err);
-          return JSON.stringify({ error: 'Tool execution failed' });
+          return JSON.stringify({ error: `Tool failed: ${err instanceof Error ? err.message : 'unknown'}` });
         }
       },
     };

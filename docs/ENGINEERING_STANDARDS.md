@@ -9,6 +9,9 @@
 │                  Routes / Pages               │  Next.js App Router
 │              (Controllers — thin)             │  app/api/*/route.ts
 ├──────────────────────────────────────────────┤
+│              Services                         │  Business logic layer
+│          (lib/services/)                      │  Orchestrates repos + external
+├──────────────────────────────────────────────┤
 │              Repositories                     │  Data access layer
 │         (lib/db/repositories/)                │  No business logic here
 ├──────────────────────────────────────────────┤
@@ -25,12 +28,107 @@
 
 ### Rules
 
-1. **Routes are controllers** — they validate input, call repositories, and return responses. No business logic in route handlers.
-2. **Repositories own data access** — all Mongoose queries live in `lib/db/repositories/`. Routes and components never call Mongoose directly.
-3. **Models define shape only** — Mongoose schemas in `lib/db/models/` define document structure and field validation. No query methods on models.
-4. **Components are presentational** — React components in `components/` receive props and render UI. They call API routes via `fetch()`, never the database directly.
-5. **Types are shared** — all interfaces live in `types/index.ts`. No duplicate type definitions across files.
-6. **External services are isolated** — third-party integrations (Gemini AI, exercise CDN) live in `lib/ai/` and `lib/exercises/` with clear boundaries.
+1. **Routes are controllers** — they validate input, call services or repositories, and return responses. No business logic in route handlers.
+2. **Services own business logic** — orchestration between repositories, external APIs, and data transformation. Lives in `lib/services/`. Kept out of routes and repositories.
+3. **Repositories own data access** — all Mongoose queries live in `lib/db/repositories/`. Routes and components never call Mongoose directly.
+4. **Models define shape only** — Mongoose schemas in `lib/db/models/` define document structure and field validation. No query methods on models.
+5. **Components are presentational** — React components in `components/` receive props and render UI. They call API routes via `fetch()`, never the database directly.
+6. **Types are shared** — all interfaces live in `types/index.ts`. No duplicate type definitions across files.
+7. **External services are isolated behind interfaces** — third-party integrations (AI providers, exercise CDN) live in `lib/ai/` and `lib/exercises/`. Routes and services depend on interfaces, not concrete implementations.
+
+---
+
+## Low-Level Design (LLD) Patterns
+
+### Strategy Pattern — Provider Abstraction
+
+External providers (AI, CDN, email) must implement a common interface. The route/service depends on the interface, not the concrete class. Switching providers requires no changes to consumers.
+
+**Example — AI provider:**
+```typescript
+// lib/ai/types.ts
+interface AIProvider {
+  streamResponse(systemPrompt: string, messages: ModelMessage[]): Promise<StreamResult>;
+}
+
+// lib/ai/geminiProvider.ts
+class GeminiProvider implements AIProvider { ... }
+
+// lib/ai/openaiProvider.ts
+class OpenAIProvider implements AIProvider { ... }
+
+// lib/ai/providerFactory.ts
+function getAIProvider(config: AIConfig): AIProvider {
+  switch (config.provider) {
+    case 'gemini': return new GeminiProvider(config);
+    case 'openai': return new OpenAIProvider(config);
+    default: throw new Error(`Unknown provider: ${config.provider}`);
+  }
+}
+
+// app/api/chat/route.ts — depends on interface, not Gemini directly
+const provider = getAIProvider(config);
+const result = provider.streamResponse(prompt, messages);
+```
+
+**Rule:** Never hardcode a provider name in a route handler. Always go through a factory or injected interface.
+
+**When to apply:** AI providers, external data sources (exercise CDN), notification systems.
+
+### Repository Pattern — Data Access Abstraction
+
+All database access goes through typed repository functions. Consumers (routes, services) call repository functions, not Mongoose models. This enables:
+- Mocking in tests without a database
+- Swapping Mongoose for another ORM without changing routes
+- Centralizing query logic (no scattered `Model.find()` calls)
+
+**Rule:** If `Mongoose` or a model is imported outside `lib/db/`, it's a violation.
+
+### Factory Pattern — Object Creation
+
+When object creation depends on configuration or conditions, use a factory function instead of branching logic in the consumer.
+
+```typescript
+// Good — factory
+const provider = AIProviderFactory.create(env);
+
+// Bad — branching in route
+if (env.AI_PROVIDER === 'gemini') {
+  const google = createGoogleGenerativeAI({ ... });
+} else if (env.AI_PROVIDER === 'openai') {
+  const openai = createOpenAI({ ... });
+}
+```
+
+**When to apply:** AI providers, image resizers, notification channels.
+
+### Adapter Pattern — External Service Wrapping
+
+Wrap third-party SDKs in adapters that expose a clean, app-specific interface. This isolates your code from SDK changes.
+
+```typescript
+// lib/ai/geminiProvider.ts — adapts @ai-sdk/google to AIProvider interface
+export class GeminiProvider implements AIProvider {
+  async streamResponse(systemPrompt: string, messages: ModelMessage[]): Promise<StreamResult> {
+    const google = createGoogleGenerativeAI({ apiKey: this.apiKey });
+    return streamText({ model: google(this.model), system: systemPrompt, messages });
+  }
+}
+```
+
+**When to apply:** AI SDK, any third-party SDK that may change.
+
+### Observer Pattern — Event-Driven Side Effects
+
+When an action triggers side effects (e.g., completing a session updates the dashboard, sends a notification), use event hooks instead of inline logic.
+
+**When to apply:** Post-save hooks, analytics events, cache invalidation.
+
+### Singleton Pattern — Cached Resources
+
+Use singletons for expensive-to-create resources like database connections and exercise data caches.
+
+**Rule:** The MongoDB connection (`lib/db/connection.ts`) and exercise data cache (`lib/exercises/externalExercises.ts`) use this pattern. No other singletons unless the resource is genuinely expensive to create.
 
 ---
 
@@ -231,7 +329,8 @@ export async function getUserExercises(
 | File type | Max lines | Action if exceeded |
 |---|---|---|
 | Component (.tsx) | 200 | Split into sub-components |
-| Route handler | 80 | Move logic to repository or service |
+| Route handler | 80 | Move logic to service or repository |
+| Service | 120 | Split by concern |
 | Repository | 100 | Split by entity or concern |
 | Model | 50 | Should rarely exceed this |
 | Type file | 150 | Split by domain if larger |

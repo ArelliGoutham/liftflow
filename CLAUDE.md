@@ -18,11 +18,12 @@ LiftFlow is a multi-user workout plan and progress tracker. Users sign in with G
 
 ### Layered MVC with Repository Pattern
 
-1. **Routes (`app/api/`)** — Controllers. Validate auth, call repositories, return JSON. No Mongoose imports. No business logic. Max 80 lines.
-2. **Repositories (`lib/db/repositories/`)** — Data access layer. All Mongoose queries. Pure functions that return typed data. No response shaping. Max 100 lines per file.
-3. **Models (`lib/db/models/`)** — Mongoose schemas. Define shape and field validation only. No query methods. Max 50 lines.
-4. **Components (`components/`)** — Presentational. Props in, UI out. Fetch via `fetch('/api/...')`. No direct DB access. Max 200 lines.
-5. **Types (`types/`)** — Shared interfaces. Single source of truth. No duplicate definitions.
+1. **Routes (`app/api/`)** — Controllers. Validate auth, call services or repositories, return JSON. No Mongoose imports. No business logic. Max 80 lines.
+2. **Services (`lib/services/`)** — Business logic. Orchestrate repositories, external APIs, data transformation. No Mongoose queries directly. Max 120 lines.
+3. **Repositories (`lib/db/repositories/`)** — Data access layer. All Mongoose queries. Pure functions that return typed data. No response shaping. Max 100 lines per file.
+4. **Models (`lib/db/models/`)** — Mongoose schemas. Define shape and field validation only. No query methods. Max 50 lines.
+5. **Components (`components/`)** — Presentational. Props in, UI out. Fetch via `fetch('/api/...')`. No direct DB access. Max 200 lines.
+6. **Types (`types/`)** — Shared interfaces. Single source of truth. No duplicate definitions.
 
 ### Data flow
 
@@ -44,12 +45,19 @@ Auth: Google OAuth via NextAuth → lib/auth.ts
 
 ## Coding Principles
 
+### Design Patterns (LLD)
+- **Strategy** — AI/CDN providers implement common interfaces; routes use factories, not hardcoded provider names
+- **Repository** — all DB access through typed functions; no Mongoose outside `lib/db/`
+- **Factory** — object creation based on config goes through factory functions
+- **Adapter** — third-party SDKs wrapped in app-specific interfaces
+- **Singleton** — only for expensive resources (DB connection, exercise cache)
+
 ### SOLID
 - **S:** One responsibility per file — a repo handles one entity, a component renders one concern
 - **O:** Extend through composition, not modification — add new files, don't bloat existing ones
 - **L:** Repositories are replaceable with mocks implementing the same interface
 - **I:** Small, focused type definitions — don't create one mega-interface
-- **D:** Routes depend on repository abstractions, not Mongoose models directly
+- **D:** Routes depend on repository/service abstractions, not Mongoose models directly
 
 ### DRY
 - Never duplicate a Mongoose query, type definition, or UI pattern

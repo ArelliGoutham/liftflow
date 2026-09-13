@@ -63,13 +63,24 @@ liftflow/
 Read `docs/ENGINEERING_STANDARDS.md` for the full specification. Key rules:
 
 ### Architecture
-- **Routes = controllers** — validate input, call repositories, return responses. No business logic.
+- **Routes = controllers** — validate input, call services or repositories, return responses. No business logic.
+- **Services = business logic** — orchestration between repos, external APIs, data transformation. Lives in `lib/services/`.
 - **Repositories = data access** — all Mongoose queries. No business logic, no response shaping.
 - **Components = presentational** — receive props, render UI, call APIs via `fetch()`. Never touch Mongoose.
 - **Types = shared** — all interfaces in `types/index.ts`.
+- **External services behind interfaces** — use Strategy/Factory patterns for providers (AI, CDN). Never hardcode a provider name in a route handler.
+
+### Design Patterns (LLD)
+- **Strategy Pattern** — external providers (AI, CDN) implement common interfaces. Routes depend on interfaces, not concrete classes. Switching providers = no consumer changes.
+- **Repository Pattern** — all DB access through typed repository functions. No Mongoose imports outside `lib/db/`.
+- **Factory Pattern** — object creation based on config goes through factories, not branching in routes.
+- **Adapter Pattern** — wrap third-party SDKs in adapters that expose app-specific interfaces.
+- **Singleton Pattern** — for expensive resources only (DB connection, exercise data cache).
+
+Read `docs/ENGINEERING_STANDARDS.md` → "Low-Level Design (LLD) Patterns" section for full details and examples.
 
 ### Principles
-- **SOLID** — single responsibility per file, dependency inversion via repositories
+- **SOLID** — single responsibility per file, dependency inversion via repositories and interfaces
 - **DRY** — no duplicated queries, types, or UI patterns
 - **YAGNI** — no speculative fields, abstractions, or config options
 - **KISS** — plain functions over classes, explicit over clever

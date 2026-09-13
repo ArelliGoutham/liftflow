@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const google = createGoogleGenerativeAI({ apiKey: GEMINI_API_KEY });
 
     const result = streamText({
-      model: google('gemini-2.0-flash'),
+      model: google('gemini-3.6-flash'),
       system: systemPrompt,
       messages,
       temperature: 0.7,

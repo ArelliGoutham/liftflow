@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { MessageSquare, X, Send, Sparkles } from 'lucide-react';
+import { MessageSquare, X, Send, Sparkles, RotateCcw, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import Link from 'next/link';
 
@@ -25,73 +25,98 @@ function getMessageText(message: any): string {
   return '';
 }
 
-// Build a lookup of exercise names to their IDs/links
-const EXERCISE_CACHE: { names: string[]; map: Map<string, string> } = { names: [], map: new Map() };
+function normalizeName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+// Build a lookup of exercise names to their IDs
+const EXERCISE_LOOKUP = { byExact: new Map<string, string>(), byNormalized: new Map<string, string>(), names: [] as string[] };
 
 async function loadExerciseNames() {
-  if (EXERCISE_CACHE.names.length > 0) return;
+  if (EXERCISE_LOOKUP.names.length > 0) return;
   try {
     const res = await fetch('/api/exercises?sharedOnly=true&limit=1400');
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data)) {
         for (const ex of data) {
-          const name = ex.name?.toLowerCase();
+          const nameLower = (ex.name || '').toLowerCase();
           const id = ex._id || ex.id;
-          if (name && id) {
-            EXERCISE_CACHE.map.set(name, id);
-            EXERCISE_CACHE.names.push(name);
+          if (nameLower && id) {
+            EXERCISE_LOOKUP.byExact.set(nameLower, id);
+            EXERCISE_LOOKUP.byNormalized.set(normalizeName(ex.name), id);
+            EXERCISE_LOOKUP.names.push(nameLower);
           }
         }
-        // Sort by length descending so longer names match first
-        EXERCISE_CACHE.names.sort((a, b) => b.length - a.length);
+        EXERCISE_LOOKUP.names.sort((a, b) => b.length - a.length);
       }
     }
   } catch {
-    // ignore — links just won't be auto-linked
+    // ignore
   }
 }
 
+function findExerciseId(text: string): string | null {
+  let result: string | null = null;
+  // Try exact match
+  const exact = EXERCISE_LOOKUP.byExact.get(text.toLowerCase());
+  if (exact) return exact;
+  // Try normalized match
+  const normalized = normalizeName(text);
+  const norm = EXERCISE_LOOKUP.byNormalized.get(normalized);
+  if (norm) return norm;
+  // Try partial normalized match
+  EXERCISE_LOOKUP.byNormalized.forEach((id, name) => {
+    if (name === normalized || name.includes(normalized) || normalized.includes(name)) {
+      result = id;
+    }
+  });
+  return result;
+}
+
 function MarkdownWithExerciseLinks({ content }: { content: string }) {
-  // Auto-link exercise names in the markdown before rendering
   const processedContent = useMemo(() => {
-    if (EXERCISE_CACHE.names.length === 0) return content;
+    if (EXERCISE_LOOKUP.names.length === 0) return content;
 
     let result = content;
-    for (const name of EXERCISE_CACHE.names) {
-      // Match exercise name as a word boundary, case-insensitive
-      const regex = new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-      const id = EXERCISE_CACHE.map.get(name);
+    for (const name of EXERCISE_LOOKUP.names) {
+      const id = findExerciseId(name);
       if (id) {
-        result = result.replace(regex, `[${name}](/exercises/${id})`);
+        // Escape regex special chars
+        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+        result = result.replace(regex, `[${name}](${id})`);
       }
     }
     return result;
   }, [content]);
 
   return (
-    <div className="prose prose-invert prose-sm max-w-none break-words
+    <div className="max-w-none break-words text-sm leading-relaxed
       [&_h1]:text-base [&_h1]:font-bold [&_h1]:text-lime [&_h1]:mt-3 [&_h1]:mb-1
       [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-lime [&_h2]:mt-3 [&_h2]:mb-1
-      [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-slate-200 [&_h3]:mt-2 [&_h3]:mb-1
+      [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:text-slate-200 [&_h3]:uppercase [&_h3]:tracking-wide [&_h3]:mt-2 [&_h3]:mb-1
       [&_p]:text-slate-300 [&_p]:text-sm [&_p]:leading-relaxed [&_p]:my-1.5
       [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:text-sm [&_ul]:text-slate-300 [&_ul]:my-1.5 [&_ul]:space-y-0.5
       [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:text-sm [&_ol]:text-slate-300 [&_ol]:my-1.5 [&_ol]:space-y-0.5
       [&_li]:text-sm [&_li]:text-slate-300 [&_li]:my-0.5
-      [&_a]:text-lime [&_a]:underline [&_a]:hover:text-lime/80 [&_a]:font-medium
+      [&_a]:text-lime [&_a]:underline [&_a]:hover:text-lime/80 [&_a]:font-medium [&_a]:break-all
       [&_strong]:text-slate-100 [&_strong]:font-semibold
-      [&_table]:w-full [&_table]:text-xs [&_table]:my-2
+      [&_table]:w-full [&_table]:text-xs [&_table]:my-2 [&_table]:border-collapse
       [&_th]:text-left [&_th]:font-semibold [&_th]:text-slate-200 [&_th]:p-1.5 [&_th]:border [&_th]:border-slate-700
       [&_td]:p-1.5 [&_td]:border [&_td]:border-slate-700 [&_td]:text-slate-400
       [&_code]:bg-slate-800 [&_code]:text-lime [&_code]:rounded [&_code]:px-1 [&_code]:text-xs
-      [&_blockquote]:border-l-2 [&_blockquote]:border-lime/30 [&_blockquote]:pl-3 [&_blockquote]:text-slate-400
+      [&_blockquote]:border-l-2 [&_blockquote]:border-lime/30 [&_blockquote]:pl-3 [&_blockquote]:text-slate-400 [&_blockquote]:italic
+      [&_hr]:border-slate-700 [&_hr]:my-2
     ">
       <ReactMarkdown
         components={{
           a: ({ href, children }) => {
-            if (href && href.startsWith('/exercises/')) {
+            if (href && !href.startsWith('http')) {
+              // Internal exercise link — href is just the exercise ID
+              const link = href.startsWith('/exercises/') ? href : `/exercises/${href}`;
               return (
-                <Link href={href} className="text-lime underline hover:text-lime/80 font-medium">
+                <Link href={link} className="text-lime underline hover:text-lime/80 font-medium">
                   {children}
                 </Link>
               );
@@ -109,10 +134,13 @@ function MarkdownWithExerciseLinks({ content }: { content: string }) {
 export default function ChatAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [confirmNewChat, setConfirmNewChat] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [exercisesLoaded, setExercisesLoaded] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, sendMessage, status, error } = useChat({
+  const { messages, setMessages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
     }),
@@ -123,11 +151,37 @@ export default function ChatAssistant() {
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
+  // Load exercise names for linking
   useEffect(() => {
     if (isOpen && !exercisesLoaded) {
       loadExerciseNames().then(() => setExercisesLoaded(true));
     }
   }, [isOpen, exercisesLoaded]);
+
+  // Load chat history from MongoDB when panel opens
+  useEffect(() => {
+    if (isOpen && !historyLoaded) {
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [] }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.messages && data.messages.length > 0) {
+            setMessages(
+              data.messages.map((m: any) => ({
+                id: m.id,
+                role: m.role,
+                parts: [{ type: 'text', text: m.content }],
+              }))
+            );
+          }
+          setHistoryLoaded(true);
+        })
+        .catch(() => setHistoryLoaded(true));
+    }
+  }, [isOpen, historyLoaded, setMessages]);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -146,6 +200,23 @@ export default function ChatAssistant() {
     handleSend(inputValue);
   };
 
+  const handleNewChat = async () => {
+    if (!confirmNewChat) {
+      setConfirmNewChat(true);
+      return;
+    }
+    setClearing(true);
+    try {
+      await fetch('/api/chat/clear', { method: 'DELETE' });
+      setMessages([]);
+      setConfirmNewChat(false);
+    } catch {
+      // ignore
+    } finally {
+      setClearing(false);
+    }
+  };
+
   return (
     <>
       {/* Floating button */}
@@ -162,15 +233,42 @@ export default function ChatAssistant() {
       {isOpen && (
         <div className="fixed bottom-40 right-4 left-4 sm:left-auto sm:right-6 sm:w-96 sm:bottom-24 z-50 flex flex-col rounded-2xl border border-slate-700 bg-panel shadow-2xl max-h-[60vh] overflow-hidden">
           {/* Header */}
-          <div className="flex items-center gap-3 border-b border-slate-700 p-4">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-lime/20">
-              <Sparkles className="h-5 w-5 text-lime" />
+          <div className="flex items-center justify-between border-b border-slate-700 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-lime/20">
+                <Sparkles className="h-5 w-5 text-lime" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-lime">LiftFlow AI</h3>
+                <p className="text-xs text-slate-500">Exercise assistant</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-lime">LiftFlow AI</h3>
-              <p className="text-xs text-slate-500">Exercise assistant</p>
-            </div>
+
+            {/* New chat button */}
+            {messages.length > 0 && (
+              <button
+                onClick={handleNewChat}
+                disabled={isLoading || clearing}
+                className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors min-h-[36px] ${
+                  confirmNewChat
+                    ? 'bg-red-500/20 text-red-400 border border-red-500/50'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                }`}
+                title={confirmNewChat ? 'Click again to confirm' : 'Start new chat'}
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                {clearing ? 'Clearing...' : confirmNewChat ? 'Confirm?' : 'New chat'}
+              </button>
+            )}
           </div>
+
+          {/* Confirm new chat message */}
+          {confirmNewChat && (
+            <div className="flex items-center gap-2 border-b border-red-500/20 bg-red-500/5 p-2 text-xs text-red-400">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              This will delete all chat history from the database. Click "Confirm?" again to proceed.
+            </div>
+          )}
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px]">
@@ -254,7 +352,7 @@ export default function ChatAssistant() {
                 className="flex h-10 w-10 items-center justify-center rounded-lg bg-lime text-charcoal disabled:opacity-30 disabled:cursor-not-allowed hover:bg-lime/90 transition-colors flex-shrink-0"
                 aria-label="Send message"
               >
-                <Send className="h-4 h-4 w-4 w-4" />
+                <Send className="w-4 h-4" />
               </button>
             </div>
           </form>

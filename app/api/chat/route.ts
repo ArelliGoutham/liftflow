@@ -4,11 +4,12 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { GEMINI_API_KEY, GEMINI_MODEL, SYSTEM_PROMPT } from '@/lib/ai/config';
 import { getExternalExercises } from '@/lib/exercises/externalExercises';
+import { getChatHistory, saveChatMessage } from '@/lib/db/repositories/chatRepository';
 
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return new Response('Unauthorized', { status: 401 });
     }
 
@@ -19,20 +20,21 @@ export async function POST(request: Request) {
       );
     }
 
+    const userId = session.user.id;
     const body = await request.json();
-    const messages = body.messages || [];
+    const clientMessages = body.messages || [];
 
-    if (messages.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'No messages provided' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+    if (clientMessages.length === 0) {
+      // First load — return existing history from MongoDB
+      const history = await getChatHistory(userId);
+      return new Response(JSON.stringify({ messages: history }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Fetch exercise summaries for context (cached 10 min)
     const allExercises = await getExternalExercises();
 
-    // Build a compact exercise index
     const exerciseSummaries = allExercises
       .slice(0, 400)
       .map(
@@ -43,14 +45,36 @@ export async function POST(request: Request) {
 
     const systemPrompt = `${SYSTEM_PROMPT}\n\nHere is a summary of exercises available in the LiftFlow library:\n${exerciseSummaries}`;
 
+    // Get the latest user message from the client
+    const lastMessage = clientMessages[clientMessages.length - 1];
+    const userText = lastMessage?.parts?.find((p: any) => p.type === 'text')?.text || '';
+
+    // Save user message to MongoDB
+    if (userText) {
+      await saveChatMessage(userId, 'user', userText);
+    }
+
+    // Load full history from MongoDB + convert for the model
+    const history = await getChatHistory(userId);
+    const modelMessages = history.map((m: any) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
     const google = createGoogleGenerativeAI({ apiKey: GEMINI_API_KEY });
 
     const result = streamText({
       model: google(GEMINI_MODEL),
       system: systemPrompt,
-      messages: await convertToModelMessages(messages),
+      messages: modelMessages,
       temperature: 0.7,
       maxOutputTokens: 500,
+      onFinish: async (completion) => {
+        // Save AI response to MongoDB after streaming completes
+        if (completion.text) {
+          await saveChatMessage(userId, 'assistant', completion.text);
+        }
+      },
     });
 
     return result.toUIMessageStreamResponse();

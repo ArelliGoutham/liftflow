@@ -34,7 +34,13 @@ export class GeminiProvider implements AIProvider {
     }
   ): Promise<AIStreamResult> {
     const google = createGoogleGenerativeAI({ apiKey: this.apiKey });
-    const modelMessages = await convertToModelMessages(messages);
+
+    // Check if messages are UIMessage format (have 'parts') or ModelMessage format (have 'content')
+    const isUIMessage = messages.length > 0 && messages[0]?.parts !== undefined;
+    const modelMessages = isUIMessage
+      ? await convertToModelMessages(messages)
+      : messages;
+
     const result = streamText({
       model: google(this.model),
       system: systemPrompt,

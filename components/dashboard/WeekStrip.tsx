@@ -2,25 +2,10 @@
 
 import Link from 'next/link';
 import { Check, Dumbbell, Moon } from 'lucide-react';
-
-interface DaySchedule {
-  date: string;
-  dayOfWeek: number;
-  dayLabel: string;
-  workoutDayId: string | null;
-  workoutTitle: string | null;
-  isRest: boolean;
-  isToday: boolean;
-  isPast: boolean;
-  isFuture: boolean;
-  isCompleted: boolean;
-  isInGracePeriod: boolean;
-  isMissed: boolean;
-  isCatchUpEligible: boolean;
-}
+import type { IDaySchedule } from '@/types';
 
 interface WeekStripProps {
-  days: DaySchedule[];
+  days: IDaySchedule[];
   todayIndex: number;
 }
 
@@ -51,7 +36,7 @@ export default function WeekStrip({ days, todayIndex }: WeekStripProps) {
   );
 }
 
-function DayCell({ day }: { day: DaySchedule }) {
+function DayCell({ day }: { day: IDaySchedule }) {
   const dotColor = day.isCompleted
     ? 'bg-lime'
     : day.isMissed

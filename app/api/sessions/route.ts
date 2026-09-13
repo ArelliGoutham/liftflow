@@ -12,7 +12,8 @@ export async function GET() {
 
     const sessions = await getRecentSessions(session.user.id);
     return NextResponse.json(sessions);
-  } catch {
+  } catch (err) {
+    console.error('[sessions GET] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to fetch sessions' }, { status: 500 });
   }
 }
@@ -32,7 +33,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(created, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error('[sessions POST] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
   }
 }

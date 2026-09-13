@@ -3,15 +3,10 @@
 import Link from 'next/link';
 import { Trash2, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
+import type { IPlanSummary } from '@/types';
 
 interface PlanCardProps {
-  plan: {
-    _id: string;
-    name: string;
-    goal?: string;
-    isActive: boolean;
-    updatedAt: string;
-  };
+  plan: IPlanSummary;
   onDeleted?: (planId: string) => void;
 }
 

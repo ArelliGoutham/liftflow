@@ -9,9 +9,9 @@ export async function createLog(data: Partial<IExerciseLog>): Promise<IExerciseL
   return log.toObject() as IExerciseLog;
 }
 
-export async function updateLog(id: string, data: Partial<IExerciseLog>): Promise<IExerciseLog | null> {
+export async function updateLog(id: string, userId: string, data: Partial<IExerciseLog>): Promise<IExerciseLog | null> {
   await connectToDatabase();
-  return ExerciseLog.findByIdAndUpdate(id, data, { new: true }).lean() as unknown as Promise<IExerciseLog | null>;
+  return ExerciseLog.findOneAndUpdate({ _id: id, userId }, data, { new: true }).lean() as unknown as Promise<IExerciseLog | null>;
 }
 
 export async function getLogsBySession(sessionId: string): Promise<IExerciseLog[]> {

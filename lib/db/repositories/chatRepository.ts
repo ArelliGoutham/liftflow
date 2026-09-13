@@ -1,13 +1,14 @@
 import connectToDatabase from '@/lib/db/connection';
 import ChatMessage from '@/lib/db/models/ChatMessage';
+import type { IChatMessage, IChatMessageSummary } from '@/types';
 
-export async function getChatHistory(userId: string): Promise<any[]> {
+export async function getChatHistory(userId: string): Promise<IChatMessageSummary[]> {
   await connectToDatabase();
   const messages = await ChatMessage.find({ userId })
     .sort({ createdAt: 1 })
     .limit(100)
     .lean();
-  return messages.map((m: any) => ({
+  return (messages as unknown as IChatMessage[]).map((m) => ({
     id: m._id.toString(),
     role: m.role,
     content: m.content,

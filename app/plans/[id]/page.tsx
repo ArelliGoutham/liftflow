@@ -5,29 +5,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Trash2, AlertCircle, ChevronDown, ChevronUp, Dumbbell } from 'lucide-react';
 import WorkoutDayEditor from '@/components/plans/WorkoutDayEditor';
-
-interface WorkoutDaySummary {
-  _id: string;
-  weekNumber: number;
-  dayOfWeek: number;
-  title: string;
-  warmupInstructions?: string;
-  cardioInstructions?: string;
-}
-
-interface Plan {
-  _id: string;
-  name: string;
-  goal?: string;
-  isActive: boolean;
-}
+import type { IPlanSummary, IWorkoutDaySummary } from '@/types';
 
 const DAY_NAMES = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export default function PlanDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const [plan, setPlan] = useState<Plan | null>(null);
-  const [days, setDays] = useState<WorkoutDaySummary[]>([]);
+  const [plan, setPlan] = useState<IPlanSummary | null>(null);
+  const [days, setDays] = useState<IWorkoutDaySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDay, setShowAddDay] = useState(false);
   const [newDay, setNewDay] = useState({ weekNumber: 1, dayOfWeek: 1, title: '' });

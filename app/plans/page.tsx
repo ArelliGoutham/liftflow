@@ -3,17 +3,10 @@
 import { useState, useEffect } from 'react';
 import PlanList from '@/components/plans/PlanList';
 import PlanForm from '@/components/plans/PlanForm';
-
-interface Plan {
-  _id: string;
-  name: string;
-  goal?: string;
-  isActive: boolean;
-  updatedAt: string;
-}
+import type { IPlanSummary } from '@/types';
 
 export default function PlansPage() {
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plans, setPlans] = useState<IPlanSummary[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
 

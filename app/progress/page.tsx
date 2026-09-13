@@ -1,24 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-interface LogEntry {
-  loggedAt: string;
-  weight?: number;
-  repetitions?: number;
-  sets?: number;
-  completed: boolean;
-}
-
-interface Exercise {
-  _id: string;
-  name: string;
-}
+import type { ILogEntry, IExerciseSummary } from '@/types';
 
 export default function ProgressPage() {
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [exercises, setExercises] = useState<IExerciseSummary[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<string>('');
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [logs, setLogs] = useState<ILogEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

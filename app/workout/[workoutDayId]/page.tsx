@@ -49,24 +49,50 @@ export default function WorkoutSessionPage({ params }: { params: { workoutDayId:
           return;
         }
 
-        const sessionRes = await fetch('/api/sessions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            planId: day.planId,
-            workoutDayId: day._id,
-          }),
-        });
-        if (sessionRes.ok) {
-          const session = await sessionRes.json();
-          setSessionId(session._id);
+        // Check for an existing uncompleted session today before creating a new one
+        const existingSessionsRes = await fetch('/api/sessions');
+        let existingSessionId: string | null = null;
+        if (existingSessionsRes.ok) {
+          const existingSessions = await existingSessionsRes.json();
+          if (Array.isArray(existingSessions)) {
+            const today = new Date().toISOString().split('T')[0];
+            const found = existingSessions.find(
+              (s: any) =>
+                s.workoutDayId === day._id &&
+                !s.completedAt &&
+                s.startedAt?.startsWith(today)
+            );
+            if (found) existingSessionId = found._id;
+          }
+        }
 
+        if (existingSessionId) {
+          // Reuse existing session
+          setSessionId(existingSessionId);
+        } else {
+          // Create new session
+          const sessionRes = await fetch('/api/sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              planId: day.planId,
+              workoutDayId: day._id,
+            }),
+          });
+          if (sessionRes.ok) {
+            const session = await sessionRes.json();
+            setSessionId(session._id);
+          }
+        }
+
+        if (sessionId || existingSessionId) {
+          const activeSessionId = existingSessionId || sessionId;
           for (const ex of day.exercises || []) {
             const logRes = await fetch('/api/logs', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                sessionId: session._id,
+                sessionId: activeSessionId,
                 exerciseId: ex.exerciseId,
                 completed: false,
                 loggedAt: new Date(),

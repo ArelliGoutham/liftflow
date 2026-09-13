@@ -28,14 +28,19 @@ export default function ExerciseSections({ exercise }: ExerciseSectionsProps) {
   const hasInvalidReferences =
     (exercise.referenceUrls?.length ?? 0) > validReferences.length;
 
+  // Map external data format: instructions → setup + execution, tips → safety
+  const setupCues = exercise.setupCues?.length ? exercise.setupCues : (exercise.instructions?.slice(0, 2) || []);
+  const executionCues = exercise.executionCues?.length ? exercise.executionCues : (exercise.instructions?.slice(2) || []);
+  const safetyNotes = exercise.safetyNotes?.length ? exercise.safetyNotes : (exercise.tips || []);
+
   return (
     <>
       {/* Setup */}
-      {exercise.setupCues && exercise.setupCues.length > 0 && (
+      {setupCues.length > 0 && (
         <section>
           <h2 className="heading-2 mb-4">Setup</h2>
           <ol className="space-y-3">
-            {exercise.setupCues.map((cue, i) => (
+            {setupCues.map((cue, i) => (
               <li key={i} className="flex gap-4">
                 <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-lime/20 text-lime font-semibold text-sm">
                   {i + 1}
@@ -48,14 +53,14 @@ export default function ExerciseSections({ exercise }: ExerciseSectionsProps) {
       )}
 
       {/* Execution */}
-      {exercise.executionCues && exercise.executionCues.length > 0 && (
+      {executionCues.length > 0 && (
         <section>
           <h2 className="heading-2 mb-4">Movement</h2>
-          <ol className="space-y-3" start={(exercise.setupCues?.length ?? 0) + 1}>
-            {exercise.executionCues.map((cue, i) => (
+          <ol className="space-y-3" start={setupCues.length + 1}>
+            {executionCues.map((cue, i) => (
               <li key={i} className="flex gap-4">
                 <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-lime/20 text-lime font-semibold text-sm">
-                  {(exercise.setupCues?.length ?? 0) + i + 1}
+                  {setupCues.length + i + 1}
                 </span>
                 <span className="text-slate-300 pt-0.5">{cue}</span>
               </li>
@@ -80,11 +85,11 @@ export default function ExerciseSections({ exercise }: ExerciseSectionsProps) {
       )}
 
       {/* Tips / Safety */}
-      {exercise.safetyNotes && exercise.safetyNotes.length > 0 && (
+      {safetyNotes.length > 0 && (
         <section className="border-l-4 border-amber-500/50 bg-amber-500/10 p-4 rounded">
           <h2 className="heading-3 text-amber-400 mb-3">Tips & Safety</h2>
           <ul className="space-y-2">
-            {exercise.safetyNotes.map((note, i) => (
+            {safetyNotes.map((note, i) => (
               <li key={i} className="flex gap-3 text-slate-300">
                 <span className="text-amber-400 flex-shrink-0">⚠</span>
                 <span>{note}</span>

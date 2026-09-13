@@ -11,6 +11,8 @@ export interface ExerciseDetailData {
   breathingCues?: string[];
   commonMistakes?: string[];
   safetyNotes?: string[];
+  instructions?: string[];
+  tips?: string[];
   referenceUrls?: string[];
   primaryMuscles?: string[];
   secondaryMuscles?: string[];

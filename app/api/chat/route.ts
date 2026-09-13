@@ -4,6 +4,7 @@ import { createAIProvider } from '@/lib/ai/providerFactory';
 import { AI_PROVIDER, GEMINI_API_KEY, GEMINI_MODEL, SYSTEM_PROMPT } from '@/lib/ai/config';
 import { getExternalExercises } from '@/lib/exercises/externalExercises';
 import { getChatHistory, saveChatMessage } from '@/lib/db/repositories/chatRepository';
+import { getAITools } from '@/lib/ai/tools';
 
 export async function POST(request: Request) {
   try {
@@ -44,6 +45,13 @@ export async function POST(request: Request) {
     const history = await getChatHistory(userId);
     const modelMessages = history.map((m: any) => ({ role: m.role, content: m.content }));
 
+    // Build AI tools with user context for user-scoped operations
+    const tools = getAITools({
+      userId,
+      email: session.user.email || undefined,
+      name: session.user.name || undefined,
+    });
+
     const provider = createAIProvider({
       provider: AI_PROVIDER as 'gemini' | 'openai',
       apiKey: GEMINI_API_KEY,
@@ -52,7 +60,9 @@ export async function POST(request: Request) {
 
     const result = await provider.streamChat(systemPrompt, modelMessages, {
       temperature: 0.7,
-      maxOutputTokens: 500,
+      maxOutputTokens: 800,
+      maxSteps: 5,
+      tools,
       onFinish: async (completion) => {
         if (completion.text) {
           await saveChatMessage(userId, 'assistant', completion.text);

@@ -20,6 +20,9 @@ jest.mock('@/lib/db/repositories/chatRepository', () => ({
   getChatHistory: jest.fn(),
   saveChatMessage: jest.fn(),
 }));
+jest.mock('@/lib/ai/tools', () => ({
+  getAITools: jest.fn().mockReturnValue({}),
+}));
 
 import { POST } from '@/app/api/chat/route';
 import { getServerSession } from 'next-auth';

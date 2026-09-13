@@ -30,6 +30,8 @@ export interface AIProvider {
     options?: {
       temperature?: number;
       maxOutputTokens?: number;
+      maxSteps?: number;
+      tools?: Record<string, any>;
       onFinish?: (completion: { text: string }) => void | Promise<void>;
     }
   ): Promise<AIStreamResult>;

@@ -11,28 +11,31 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.66",
+    "@ai-sdk/react": "^4.0.102",
+    "ai": "^7.0.99",
+    "class-variance-authority": "^0.7.0",
+    "lucide-react": "^0.395.0",
+    "mongoose": "^8.4.3",
     "next": "14.2.5",
+    "next-auth": "^4.24.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "next-auth": "^4.24.7",
-    "mongoose": "^8.4.3",
     "recharts": "^2.12.7",
-    "lucide-react": "^0.395.0",
-    "tailwind-merge": "^2.3.0",
-    "class-variance-authority": "^0.7.0"
+    "tailwind-merge": "^2.3.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.6",
+    "@testing-library/react": "^16.0.0",
+    "@types/jest": "^29.5.12",
     "@types/node": "^20.14.8",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "typescript": "^5.5.2",
-    "tailwindcss": "^3.4.4",
-    "postcss": "^8.4.38",
     "autoprefixer": "^10.4.19",
     "jest": "^29.7.0",
-    "@testing-library/react": "^16.0.0",
-    "@testing-library/jest-dom": "^6.4.6",
     "jest-environment-jsdom": "^29.7.0",
-    "@types/jest": "^29.5.12"
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.5.2"
   }
 }

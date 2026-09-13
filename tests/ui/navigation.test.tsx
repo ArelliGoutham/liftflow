@@ -17,6 +17,11 @@ jest.mock('next-auth/react', () => ({
   SessionProvider: ({ children }: any) => <>{children}</>,
 }));
 
+jest.mock('@/components/chat/ChatAssistant', () => ({
+  __esModule: true,
+  default: () => <div data-testid="chat-mock" />,
+}));
+
 describe('AppShell Navigation', () => {
   beforeEach(() => {
     (usePathname as jest.Mock).mockReturnValue('/exercises');

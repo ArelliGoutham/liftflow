@@ -29,8 +29,13 @@ function normalizeName(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-// Build a lookup of exercise names to their IDs
-const EXERCISE_LOOKUP = { byExact: new Map<string, string>(), byNormalized: new Map<string, string>(), names: [] as string[] };
+// Exercise name → ID lookup
+const EXERCISE_LOOKUP = {
+  byExact: new Map<string, string>(),
+  byNormalized: new Map<string, string>(),
+  names: [] as string[],
+  normalizedNames: [] as string[],
+};
 
 async function loadExerciseNames() {
   if (EXERCISE_LOOKUP.names.length > 0) return;
@@ -40,15 +45,20 @@ async function loadExerciseNames() {
       const data = await res.json();
       if (Array.isArray(data)) {
         for (const ex of data) {
-          const nameLower = (ex.name || '').toLowerCase();
+          const name = ex.name || '';
           const id = ex._id || ex.id;
-          if (nameLower && id) {
-            EXERCISE_LOOKUP.byExact.set(nameLower, id);
-            EXERCISE_LOOKUP.byNormalized.set(normalizeName(ex.name), id);
-            EXERCISE_LOOKUP.names.push(nameLower);
+          if (name && id) {
+            const lower = name.toLowerCase();
+            const norm = normalizeName(name);
+            EXERCISE_LOOKUP.byExact.set(lower, id);
+            EXERCISE_LOOKUP.byNormalized.set(norm, id);
+            EXERCISE_LOOKUP.names.push(lower);
+            EXERCISE_LOOKUP.normalizedNames.push(norm);
           }
         }
+        // Sort by length descending so longer names match first
         EXERCISE_LOOKUP.names.sort((a, b) => b.length - a.length);
+        EXERCISE_LOOKUP.normalizedNames.sort((a, b) => b.length - a.length);
       }
     }
   } catch {
@@ -56,40 +66,55 @@ async function loadExerciseNames() {
   }
 }
 
-function findExerciseId(text: string): string | null {
-  let result: string | null = null;
-  // Try exact match
-  const exact = EXERCISE_LOOKUP.byExact.get(text.toLowerCase());
+function findExerciseIdByName(text: string): string | null {
+  const lower = text.toLowerCase();
+  const exact = EXERCISE_LOOKUP.byExact.get(lower);
   if (exact) return exact;
-  // Try normalized match
-  const normalized = normalizeName(text);
-  const norm = EXERCISE_LOOKUP.byNormalized.get(normalized);
-  if (norm) return norm;
-  // Try partial normalized match
-  EXERCISE_LOOKUP.byNormalized.forEach((id, name) => {
-    if (name === normalized || name.includes(normalized) || normalized.includes(name)) {
-      result = id;
+
+  const norm = normalizeName(text);
+  const normMatch = EXERCISE_LOOKUP.byNormalized.get(norm);
+  if (normMatch) return normMatch;
+
+  // Partial match — check if normalized text contains or is contained by a known name
+  for (const name of EXERCISE_LOOKUP.normalizedNames) {
+    if (name.length < 4) continue; // Skip very short names
+    if (norm === name || norm.includes(name) || name.includes(norm)) {
+      return EXERCISE_LOOKUP.byNormalized.get(name) || null;
     }
-  });
-  return result;
+  }
+  return null;
 }
 
-function MarkdownWithExerciseLinks({ content }: { content: string }) {
-  const processedContent = useMemo(() => {
-    if (EXERCISE_LOOKUP.names.length === 0) return content;
-
-    let result = content;
-    for (const name of EXERCISE_LOOKUP.names) {
-      const id = findExerciseId(name);
-      if (id) {
-        // Escape regex special chars
-        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
-        result = result.replace(regex, `[${name}](${id})`);
-      }
-    }
-    return result;
-  }, [content]);
+/**
+ * Walk the ReactMarkdown node tree and wrap text nodes
+ * that match exercise names with Link components.
+ */
+function RemarkExerciseLinks({ content }: { content: string }) {
+  const components = useMemo(
+    () => ({
+      // Override text rendering in paragraphs, list items, table cells
+      p: ({ children }: any) => {
+        return <p>{linkifyChildren(children)}</p>;
+      },
+      li: ({ children }: any) => {
+        return <li>{linkifyChildren(children)}</li>;
+      },
+      strong: ({ children }: any) => {
+        return <strong>{linkifyChildren(children)}</strong>;
+      },
+      td: ({ children }: any) => {
+        return <td>{linkifyChildren(children)}</td>;
+      },
+      a: ({ href, children }: any) => {
+        // Keep the AI's own links as-is
+        if (href && href.startsWith('http')) {
+          return <a href={href} target="_blank" rel="noopener noreferrer" className="text-lime underline">{children}</a>;
+        }
+        return <>{children}</>;
+      },
+    }),
+    []
+  );
 
   return (
     <div className="max-w-none break-words text-sm leading-relaxed
@@ -109,26 +134,130 @@ function MarkdownWithExerciseLinks({ content }: { content: string }) {
       [&_blockquote]:border-l-2 [&_blockquote]:border-lime/30 [&_blockquote]:pl-3 [&_blockquote]:text-slate-400 [&_blockquote]:italic
       [&_hr]:border-slate-700 [&_hr]:my-2
     ">
-      <ReactMarkdown
-        components={{
-          a: ({ href, children }) => {
-            if (href && !href.startsWith('http')) {
-              // Internal exercise link — href is just the exercise ID
-              const link = href.startsWith('/exercises/') ? href : `/exercises/${href}`;
-              return (
-                <Link href={link} className="text-lime underline hover:text-lime/80 font-medium">
-                  {children}
-                </Link>
-              );
-            }
-            return <a href={href} target="_blank" rel="noopener noreferrer" className="text-lime underline">{children}</a>;
-          },
-        }}
-      >
-        {processedContent}
-      </ReactMarkdown>
+      <ReactMarkdown components={components}>{content}</ReactMarkdown>
     </div>
   );
+}
+
+/**
+ * Recursively process children nodes — text strings get split
+ * and exercise names wrapped in Link components.
+ */
+function linkifyChildren(children: React.ReactNode): React.ReactNode {
+  if (!children) return children;
+
+  const result: React.ReactNode[] = [];
+  let key = 0;
+
+  function process(node: React.ReactNode) {
+    if (typeof node === 'string') {
+      // Split the string by exercise names
+      const parts = splitByExerciseNames(node);
+      for (const part of parts) {
+        if (part.isExercise && part.id) {
+          result.push(
+            <Link
+              key={key++}
+              href={`/exercises/${part.id}`}
+              className="text-lime underline hover:text-lime/80 font-medium"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {part.text}
+            </Link>
+          );
+        } else {
+          result.push(<span key={key++}>{part.text}</span>);
+        }
+      }
+    } else if (Array.isArray(node)) {
+      node.forEach((child) => process(child));
+    } else if (node && typeof node === 'object' && 'props' in node) {
+      // React element — process its children
+      result.push(node);
+    } else {
+      result.push(node);
+    }
+  }
+
+  process(children);
+  return result;
+}
+
+interface TextPart {
+  text: string;
+  isExercise: boolean;
+  id?: string;
+}
+
+function splitByExerciseNames(text: string): TextPart[] {
+  if (EXERCISE_LOOKUP.names.length === 0) return [{ text, isExercise: false }];
+
+  // Find all exercise name matches in the text
+  interface Match {
+    start: number;
+    end: number;
+    name: string;
+    id: string;
+  }
+
+  const matches: Match[] = [];
+  const lowerText = text.toLowerCase();
+
+  for (const name of EXERCISE_LOOKUP.names) {
+    if (name.length < 3) continue; // Skip very short names
+
+    let searchStart = 0;
+    while (true) {
+      const idx = lowerText.indexOf(name, searchStart);
+      if (idx === -1) break;
+
+      // Check word boundaries
+      const beforeChar = idx > 0 ? text[idx - 1] : ' ';
+      const afterChar = idx + name.length < text.length ? text[idx + name.length] : ' ';
+
+      // Allow word boundary or punctuation
+      const isBoundary = /[\s,.;:!?()\[\]/-]/.test(beforeChar) || idx === 0;
+      const isEndBoundary = /[\s,.;:!?()\[\]/-]/.test(afterChar) || idx + name.length === text.length;
+
+      if (isBoundary && isEndBoundary) {
+        const id = EXERCISE_LOOKUP.byExact.get(name);
+        if (id) {
+          // Check this doesn't overlap with an existing match
+          const overlaps = matches.some(
+            (m) => idx < m.end && idx + name.length > m.start
+          );
+          if (!overlaps) {
+            matches.push({ start: idx, end: idx + name.length, name, id });
+          }
+        }
+      }
+
+      searchStart = idx + 1;
+    }
+  }
+
+  if (matches.length === 0) return [{ text, isExercise: false }];
+
+  // Sort matches by position
+  matches.sort((a, b) => a.start - b.start);
+
+  // Build parts
+  const parts: TextPart[] = [];
+  let lastEnd = 0;
+
+  for (const match of matches) {
+    if (match.start > lastEnd) {
+      parts.push({ text: text.slice(lastEnd, match.start), isExercise: false });
+    }
+    parts.push({ text: text.slice(match.start, match.end), isExercise: true, id: match.id });
+    lastEnd = match.end;
+  }
+
+  if (lastEnd < text.length) {
+    parts.push({ text: text.slice(lastEnd), isExercise: false });
+  }
+
+  return parts;
 }
 
 export default function ChatAssistant() {
@@ -151,14 +280,12 @@ export default function ChatAssistant() {
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
-  // Load exercise names for linking
   useEffect(() => {
     if (isOpen && !exercisesLoaded) {
       loadExerciseNames().then(() => setExercisesLoaded(true));
     }
   }, [isOpen, exercisesLoaded]);
 
-  // Load chat history from MongoDB when panel opens
   useEffect(() => {
     if (isOpen && !historyLoaded) {
       fetch('/api/chat', {
@@ -244,7 +371,6 @@ export default function ChatAssistant() {
               </div>
             </div>
 
-            {/* New chat button */}
             {messages.length > 0 && (
               <button
                 onClick={handleNewChat}
@@ -262,7 +388,6 @@ export default function ChatAssistant() {
             )}
           </div>
 
-          {/* Confirm new chat message */}
           {confirmNewChat && (
             <div className="flex items-center gap-2 border-b border-red-500/20 bg-red-500/5 p-2 text-xs text-red-400">
               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -309,7 +434,7 @@ export default function ChatAssistant() {
                   {m.role === 'user' ? (
                     <p className="text-sm whitespace-pre-wrap break-words">{getMessageText(m)}</p>
                   ) : (
-                    <MarkdownWithExerciseLinks content={getMessageText(m)} />
+                    <RemarkExerciseLinks content={getMessageText(m)} />
                   )}
                 </div>
               </div>

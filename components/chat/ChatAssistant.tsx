@@ -391,7 +391,7 @@ export default function ChatAssistant() {
           {confirmNewChat && (
             <div className="flex items-center gap-2 border-b border-red-500/20 bg-red-500/5 p-2 text-xs text-red-400">
               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-              This will delete all chat history from the database. Click "Confirm?" again to proceed.
+              This will permanently delete your chat history. Click "Confirm?" again to proceed.
             </div>
           )}
 

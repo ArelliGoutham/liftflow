@@ -1,8 +1,8 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { streamText } from 'ai';
+import { streamText, convertToModelMessages } from 'ai';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { GEMINI_API_KEY, SYSTEM_PROMPT } from '@/lib/ai/config';
+import { GEMINI_API_KEY, GEMINI_MODEL, SYSTEM_PROMPT } from '@/lib/ai/config';
 import { getExternalExercises } from '@/lib/exercises/externalExercises';
 
 export async function POST(request: Request) {
@@ -46,9 +46,9 @@ export async function POST(request: Request) {
     const google = createGoogleGenerativeAI({ apiKey: GEMINI_API_KEY });
 
     const result = streamText({
-      model: google('gemini-3.1-flash-lite'),
+      model: google(GEMINI_MODEL),
       system: systemPrompt,
-      messages,
+      messages: await convertToModelMessages(messages),
       temperature: 0.7,
       maxOutputTokens: 500,
     });

@@ -1,4 +1,5 @@
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+export const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
 
 export const SYSTEM_PROMPT = `You are LiftFlow AI, a fitness exercise assistant integrated into the LiftFlow workout tracking app.
 

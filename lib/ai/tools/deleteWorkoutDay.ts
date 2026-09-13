@@ -11,8 +11,11 @@ export const deleteWorkoutDayTool: ToolDefinition = {
   parameters: z.object({
     workoutDayId: z.string().describe('The workout day ID to delete'),
   }),
-  async execute(params, context) {
-    const result = await deleteWorkoutDay(params.workoutDayId, context.userId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async execute(params: any, context) {
+    const workoutDayId = params.workoutDayId || params.dayId;
+
+    const result = await deleteWorkoutDay(workoutDayId, context.userId);
     if (!result) {
       return { error: 'Workout day not found or does not belong to you' };
     }

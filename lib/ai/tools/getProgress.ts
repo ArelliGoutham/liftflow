@@ -11,8 +11,11 @@ export const getProgressTool: ToolDefinition = {
   parameters: z.object({
     exerciseId: z.string().describe('The exercise ID to check progress for'),
   }),
-  async execute(params, context) {
-    const logs = await getLogsByExercise(context.userId, params.exerciseId, 20);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async execute(params: any, context) {
+    const exerciseId = params.exerciseId || params.exercise_id;
+
+    const logs = await getLogsByExercise(context.userId, exerciseId, 20);
     return logs.map((l: any) => ({
       date: l.loggedAt?.toISOString()?.split('T')[0],
       completed: l.completed,

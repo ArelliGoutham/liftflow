@@ -12,15 +12,19 @@ export const removeExerciseTool: ToolDefinition = {
     workoutDayId: z.string().describe('The workout day ID'),
     exerciseId: z.string().describe('The exercise ID to remove'),
   }),
-  async execute(params, context) {
-    const day: any = await getWorkoutDayWithExerciseNames(params.workoutDayId, context.userId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async execute(params: any, context) {
+    const workoutDayId = params.workoutDayId || params.dayId;
+    const exerciseId = params.exerciseId || params.exercise_id;
+
+    const day: any = await getWorkoutDayWithExerciseNames(workoutDayId, context.userId);
     if (!day) {
       return { error: 'Workout day not found' };
     }
 
     const originalCount = day.exercises?.length || 0;
     const remaining = (day.exercises || [])
-      .filter((ex: any) => ex.exerciseId !== params.exerciseId)
+      .filter((ex: any) => ex.exerciseId !== exerciseId)
       .map((ex: any, i: number) => ({
         exerciseId: ex.exerciseId,
         order: i,
@@ -36,7 +40,7 @@ export const removeExerciseTool: ToolDefinition = {
       return { error: 'Exercise not found in this workout day' };
     }
 
-    await updateWorkoutDay(params.workoutDayId, context.userId, { exercises: remaining });
+    await updateWorkoutDay(workoutDayId, context.userId, { exercises: remaining });
 
     return { success: true, message: `Removed exercise from ${day.title}`, remainingCount: remaining.length };
   },

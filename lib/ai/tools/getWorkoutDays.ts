@@ -11,8 +11,11 @@ export const getWorkoutDaysTool: ToolDefinition = {
   parameters: z.object({
     planId: z.string().describe('The plan ID from getUserPlans'),
   }),
-  async execute(params, context) {
-    const days = await getPlanWorkoutDays(params.planId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async execute(params: any, context) {
+    const planId = params.planId || params.plan_id;
+
+    const days = await getPlanWorkoutDays(planId);
     return days.map((d: any) => ({
       id: d._id?.toString(),
       title: d.title,

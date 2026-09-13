@@ -14,13 +14,18 @@ export const createWorkoutDayTool: ToolDefinition = {
     dayOfWeek: z.number().min(1).max(7).describe('Day of week: 1=Monday through 7=Sunday'),
     weekNumber: z.number().min(1).default(1).describe('Week number (default 1)'),
   }),
-  async execute(params, context) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async execute(params: any, context) {
+    const planId = params.planId || params.plan_id;
+    const dayOfWeek = params.dayOfWeek || params.day_of_week;
+    const weekNumber = params.weekNumber || params.week_number || 1;
+
     const day = await createWorkoutDay({
-      planId: params.planId as any,
+      planId: planId as any,
       userId: context.userId as any,
       title: params.title,
-      dayOfWeek: params.dayOfWeek,
-      weekNumber: params.weekNumber,
+      dayOfWeek,
+      weekNumber,
     });
 
     return {

@@ -12,6 +12,10 @@ let cachedExercises: IExternalExercise[] | null = null;
 let cacheTime = 0;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
+/**
+ * Fetches the canonical exercise database from the external CDN with a 10-minute in-memory cache.
+ * @returns Array of external exercise documents; returns cached data on fetch failure if available, empty array otherwise
+ */
 export async function getExternalExercises(): Promise<IExternalExercise[]> {
   if (cachedExercises && Date.now() - cacheTime < CACHE_TTL_MS) {
     return cachedExercises;
@@ -34,6 +38,11 @@ export async function getExternalExercises(): Promise<IExternalExercise[]> {
   }
 }
 
+/**
+ * Retrieves a single external exercise by ID, matching against multiple identifier fields.
+ * @param id - The exercise identifier (id, _id, sourceIds, or name) as a string
+ * @returns The matching external exercise, or null if not found
+ */
 export async function getExternalExerciseById(id: string): Promise<IExternalExercise | null> {
   const all = await getExternalExercises();
   return (

@@ -21,6 +21,10 @@ if (!global.mongoose) {
   global.mongoose = cached;
 }
 
+/**
+ * Establishes a cached connection to the MongoDB database, reusing an existing connection if available.
+ * @returns Promise resolving to the Mongoose connection instance
+ */
 async function connectToDatabase() {
   if (cached.conn) {
     return cached.conn;

@@ -32,7 +32,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { status } = useSession();
   const isLanding = pathname === '/' || pathname === '/login';
-  const isLoading = status === 'loading';
   const isAuthenticated = status === 'authenticated';
 
   const visibleNavItems = navItems.filter(
@@ -90,10 +89,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
 
             <div className="flex items-center gap-3 md:gap-4">
-              {isLoading && (
+              {status === 'loading' && (
                 <div className="h-8 w-8 animate-pulse rounded-full bg-slate-700" />
               )}
-              {!isLoading && <UserMenu compact />}
+              {status !== 'loading' && !isLanding && <UserMenu compact />}
             </div>
           </div>
         </header>

@@ -27,6 +27,11 @@ function hoursBetween(from: Date, to: Date): number {
   return Math.abs(to.getTime() - from.getTime()) / (1000 * 60 * 60);
 }
 
+/**
+ * Determines whether a workout day title indicates a rest day.
+ * @param title - The workout day title to check
+ * @returns True if the title matches a known rest day label (case-insensitive), false otherwise
+ */
 export function isRestDay(title: string): boolean {
   return REST_DAY_TITLES.some((r) => title.toLowerCase().trim() === r);
 }
@@ -44,6 +49,14 @@ interface SessionInfo {
   startedAt: string;
 }
 
+/**
+ * Computes a week schedule for a fitness plan, mapping workout days to calendar dates with completion status.
+ * @param plan - The plan metadata including optional start/end dates and weekly anchor
+ * @param workoutDays - Array of workout day info (id, dayOfWeek, title) for the plan
+ * @param sessions - Array of completed session info for the plan
+ * @param today - The reference date for the current week (default: now)
+ * @returns Week schedule with per-day status (completed, missed, rest, catch-up eligible) and plan expiry info
+ */
 export function computeWeekSchedule(
   plan: {
     startDate?: string;

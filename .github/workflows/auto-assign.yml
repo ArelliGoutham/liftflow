@@ -1,0 +1,21 @@
+name: Auto-assign Reviewer
+
+on:
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign repo owner as reviewer
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            await github.rest.pulls.requestReviewers({
+              owner: owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              reviewers: [owner],
+            });

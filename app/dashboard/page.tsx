@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { Dumbbell, Plus, AlertCircle, RefreshCw, CalendarClock, Moon, ArrowRight } from 'lucide-react';
+import { Dumbbell, Plus, AlertCircle, RefreshCw, CalendarClock, Moon, ArrowRight, UserPlus } from 'lucide-react';
 import WeekStrip from '@/components/dashboard/WeekStrip';
 
 interface DaySchedule {
@@ -47,6 +47,7 @@ export default function DashboardPage() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [profileCompleted, setProfileCompleted] = useState<boolean | null>(null);
 
   const fetchDashboard = async () => {
     setError(null);
@@ -63,6 +64,14 @@ export default function DashboardPage() {
   useEffect(() => {
     if (status === 'authenticated') fetchDashboard();
   }, [status, weekOffset]);
+
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+    fetch('/api/profile')
+      .then((res) => res.ok ? res.json() : null)
+      .then((p) => { if (p) setProfileCompleted(p.profileCompleted); })
+      .catch(() => { /* non-critical — don't block dashboard */ });
+  }, [status]);
 
   if (status === 'unauthenticated') {
     return (
@@ -91,6 +100,20 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-8 max-w-4xl">
       <h1 className="page-title">Dashboard</h1>
+
+      {profileCompleted === false && (
+        <div className="card border-lime/30 bg-lime/5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <UserPlus className="w-5 h-5 text-lime flex-shrink-0" />
+            <p className="text-sm text-slate-200">
+              Complete your profile to get personalized recommendations.
+            </p>
+          </div>
+          <Link href="/onboarding" className="btn-primary text-sm flex-shrink-0">
+            Complete profile
+          </Link>
+        </div>
+      )}
 
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
         <Link href="/plans" className="card group hover:border-lime/50 p-6 flex items-center justify-between">

@@ -6,8 +6,34 @@ export interface IUser {
   name: string;
   email: string;
   image?: string;
+  gender?: string;
+  dateOfBirth?: string;
+  heightCm?: number;
+  weightKg?: number;
+  fitnessGoal?: string;
+  experienceLevel?: string;
+  workoutsPerWeek?: number;
+  equipmentAccess?: string;
+  injuries?: string;
+  profileCompleted: boolean;
+  preferredUnits: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+/** User profile fields used by the onboarding flow, settings page, and AI tools. */
+export interface IUserProfile {
+  gender?: string;
+  dateOfBirth?: string;
+  heightCm?: number;
+  weightKg?: number;
+  fitnessGoal?: string;
+  experienceLevel?: string;
+  workoutsPerWeek?: number;
+  equipmentAccess?: string;
+  injuries?: string;
+  profileCompleted: boolean;
+  preferredUnits: string;
 }
 
 export interface IPlan {

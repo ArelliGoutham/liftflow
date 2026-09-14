@@ -1,0 +1,40 @@
+name: CI — Build and Test
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      statuses: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Run DB integration tests
+        run: npm run test:db
+
+      - name: Build
+        run: npm run build
+        env:
+          # Dummy env vars for build — real secrets are not needed for compilation
+          MONGODB_URI: mongodb://dummy:dummy@dummy.mongodb.net/dummy?retryWrites=true&w=majority
+          NEXTAUTH_SECRET: dummy-secret-for-build-only
+          GOOGLE_CLIENT_ID: dummy-client-id
+          GOOGLE_CLIENT_SECRET: dummy-client-secret
+          NEXTAUTH_URL: http://localhost:3000
+          GEMINI_API_KEY: dummy-gemini-key

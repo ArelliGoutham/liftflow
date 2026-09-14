@@ -1,1 +1,1 @@
-import '@testing-library/jest-dom';
+// jest.setup.ts — empty for node env, @testing-library/jest-dom loaded only in ui project

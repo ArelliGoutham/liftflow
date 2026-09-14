@@ -2,11 +2,10 @@ const nextJest = require('next/jest');
 const createJestConfig = nextJest({ dir: './' });
 
 module.exports = createJestConfig({
-  testEnvironment: 'jsdom',
+  testEnvironment: 'node',
   setupFiles: ['<rootDir>/jest.polyfills.cjs'],
-  setupFilesAfterEnv: ['<rootDir>/jest.ui.setup.ts'],
   moduleNameMapper: { '^@/(.*)$': '<rootDir>/$1' },
-  testMatch: ['**/tests/**/*.test.ts', '**/tests/**/*.test.tsx'],
-  testPathIgnorePatterns: ['tests/integration/repositories.test.ts'],
+  testMatch: ['**/tests/integration/repositories.test.ts'],
+  transformIgnorePatterns: ['node_modules/(?!(mongodb-memory-server-core|mongodb)/)'],
   testTimeout: 30000,
 });

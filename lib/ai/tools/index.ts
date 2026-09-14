@@ -8,6 +8,7 @@ import { createPlanTool } from './createPlan';
 import { createWorkoutDayTool } from './createWorkoutDay';
 import { getProgressTool } from './getProgress';
 import { deleteWorkoutDayTool } from './deleteWorkoutDay';
+import { markExerciseDoneTool, finishWorkoutTool } from './markExerciseDone';
 
 /**
  * All available AI tools in a registry array.
@@ -24,6 +25,8 @@ export const allTools: ToolDefinition[] = [
   createWorkoutDayTool,
   deleteWorkoutDayTool,
   getProgressTool,
+  markExerciseDoneTool,
+  finishWorkoutTool,
 ];
 
 /**

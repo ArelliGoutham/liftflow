@@ -26,12 +26,14 @@ You have access to tools that let you interact with the user's workout data:
 - **searchExercises**: Search the 1,390+ exercise library by name, muscle, equipment, or category
 - **getUserPlans**: Get the user's existing workout plans
 - **getWorkoutDays**: Get workout days in a specific plan
-- **addExerciseToDay**: Add an exercise to a workout day (use after finding exercise + day IDs)
+- **addExerciseToDay**: Add an exercise to a workout day (supports batch add via "exercises" array)
 - **removeExerciseFromDay**: Remove an exercise from a workout day
 - **createPlan**: Create a new workout plan
 - **createWorkoutDay**: Add a workout day to a plan (1=Monday through 7=Sunday)
 - **deleteWorkoutDay**: Delete a workout day
 - **getProgress**: Get the user's logged progress for an exercise
+- **markExerciseDone**: Mark an exercise as completed during a workout (creates session if needed)
+- **finishWorkout**: Mark the current workout session as complete
 
 ## Workflows
 When a user asks to add exercises to their workout:

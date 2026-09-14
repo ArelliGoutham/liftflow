@@ -35,7 +35,7 @@ export interface IPlanSummary {
 
 export interface IDaySchedule {
   date: string;
-  dayOfWeek: number;
+  dayNumber: number;
   dayLabel: string;
   workoutDayId: string | null;
   workoutTitle: string | null;
@@ -55,14 +55,16 @@ export interface IWeekSchedule {
   missedDays: IDaySchedule[];
   planExpired: boolean;
   planExpiryMessage: string | null;
+  weekOffset: number;
+  weekStart: string;
+  weekEnd: string;
 }
 
 export interface IWorkoutDay {
   _id: ObjectId;
   planId: ObjectId;
   userId: ObjectId;
-  weekNumber: number;
-  dayOfWeek: number;
+  date: string;
   title: string;
   warmupInstructions?: string;
   cardioInstructions?: string;

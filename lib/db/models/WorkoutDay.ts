@@ -1,5 +1,4 @@
 import mongoose, { Schema } from 'mongoose';
-import type { IWorkoutDay, IWorkoutExercise } from '@/types';
 
 const WorkoutExerciseSchema = new Schema(
   {
@@ -15,12 +14,11 @@ const WorkoutExerciseSchema = new Schema(
   }
 );
 
-const WorkoutDaySchema = new Schema<IWorkoutDay>(
+const WorkoutDaySchema = new Schema(
   {
     planId: { type: Schema.Types.ObjectId, required: true, ref: 'Plan' },
     userId: { type: Schema.Types.ObjectId, required: true, ref: 'User', index: true },
-    weekNumber: { type: Number, required: true, default: 1 },
-    dayOfWeek: { type: Number, required: true, default: 1 },
+    date: { type: String, required: true },
     title: { type: String, required: true },
     warmupInstructions: { type: String },
     cardioInstructions: { type: String },
@@ -29,6 +27,8 @@ const WorkoutDaySchema = new Schema<IWorkoutDay>(
   { timestamps: true }
 );
 
-const WorkoutDay = mongoose.models.WorkoutDay || mongoose.model<IWorkoutDay>('WorkoutDay', WorkoutDaySchema);
+WorkoutDaySchema.index({ planId: 1, date: 1 }, { unique: true });
+
+const WorkoutDay = mongoose.models.WorkoutDay || mongoose.model('WorkoutDay', WorkoutDaySchema);
 
 export default WorkoutDay;

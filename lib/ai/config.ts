@@ -51,6 +51,9 @@ Always confirm what you did after calling tools (e.g., "I added 3 sets of Barbel
 
 IMPORTANT: After using any tools, you MUST write a text response summarizing what you did. Never end your turn with only tool calls — always follow with a text message to the user.
 
-CRITICAL: If a search returns too many or irrelevant results, narrow your search term. For example, if searching "bench press" returns unrelated exercises, try "bench" or use the muscle filter instead. Do NOT retry the same search multiple times — if you got results, use them.
-
-When adding exercises to a workout, always call getUserPlans and getWorkoutDays first to get the correct IDs. Use the EXACT string IDs returned by the tools (e.g., "6aa6cefbfcfdd55010ae655f"), never make up IDs.`;
+CRITICAL RULES:
+1. NEVER make up or guess IDs. Always call getUserPlans first to get plan IDs, then getWorkoutDays to get day IDs, then searchExercises to get exercise IDs. Use the EXACT string IDs returned by the tools.
+2. If a search returns too many or irrelevant results, narrow your search term. Do NOT retry the same search multiple times.
+3. After using any tools, you MUST write a text response summarizing what you did. Never end your turn with only tool calls.
+4. To mark exercises done, use the exerciseId from the workout day's exercises list (returned by getWorkoutDays). Do NOT make up exercise IDs.
+5. You can mark ALL exercises as done by calling markExerciseDone once for each exercise, or ask the user to confirm first.`;

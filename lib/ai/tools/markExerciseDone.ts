@@ -74,17 +74,23 @@ export const markExerciseDoneTool: ToolDefinition = {
     const today = new Date().toISOString().split('T')[0];
 
     let session: any = recentSessions.find(
-      (s: any) =>
-        s.workoutDayId?.toString() === workoutDayId &&
-        !s.completedAt &&
-        s.startedAt?.startsWith(today)
+      (s: any) => {
+        const startedAt = s.startedAt instanceof Date ? s.startedAt.toISOString() : (typeof s.startedAt === 'string' ? s.startedAt : '');
+        const workoutDayIdMatch = s.workoutDayId?.toString() === workoutDayId;
+        const isToday = startedAt.startsWith(today);
+        return workoutDayIdMatch && !s.completedAt && isToday;
+      }
     );
 
     // Create a session if none exists today
     if (!session) {
+      // Get planId from the workout day
+      const dayForPlan: any = await getWorkoutDayWithExerciseNames(workoutDayId, context.userId);
+      const planId = dayForPlan?.planId?.toString() || params.planId;
+
       session = await createSession({
         userId: context.userId as any,
-        planId: (day.planId?.toString() || params.planId) as any,
+        planId: planId as any,
         workoutDayId: workoutDayId as any,
         startedAt: new Date(),
       });
@@ -141,9 +147,10 @@ export const finishWorkoutTool: ToolDefinition = {
     const today = new Date().toISOString().split('T')[0];
 
     let session: any = recentSessions.find(
-      (s: any) =>
-        !s.completedAt &&
-        s.startedAt?.startsWith(today)
+      (s: any) => {
+        const startedAt = s.startedAt instanceof Date ? s.startedAt.toISOString() : (typeof s.startedAt === 'string' ? s.startedAt : '');
+        return !s.completedAt && startedAt.startsWith(today);
+      }
     );
 
     if (!session) {

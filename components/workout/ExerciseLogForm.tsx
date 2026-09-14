@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dumbbell, Clock } from 'lucide-react';
 
 interface ExerciseLogFormProps {
@@ -11,6 +11,15 @@ interface ExerciseLogFormProps {
   trackingMode?: 'reps' | 'duration';
   targetDurationValue?: number;
   durationUnit?: 'seconds' | 'minutes';
+  isCompleted?: boolean;
+  logData?: {
+    sets?: number;
+    weight?: number;
+    repetitions?: number;
+    durationValue?: number;
+    durationUnit?: string;
+    notes?: string;
+  };
   onLog: (data: {
     completed: boolean;
     trackingMode: 'reps' | 'duration';
@@ -31,15 +40,18 @@ export default function ExerciseLogForm({
   trackingMode = 'reps',
   targetDurationValue,
   durationUnit = 'seconds',
+  isCompleted = false,
+  logData,
   onLog,
 }: ExerciseLogFormProps) {
-  const [completed, setCompleted] = useState(false);
-  const [sets, setSets] = useState(targetSets.toString());
-  const [weight, setWeight] = useState('');
-  const [repetitions, setRepetitions] = useState(targetReps?.toString() || '');
-  const [durationValue, setDurationValue] = useState(targetDurationValue?.toString() || '');
-  const [loggedDurationUnit, setLoggedDurationUnit] = useState(durationUnit);
-  const [notes, setNotes] = useState('');
+  const [completed, setCompleted] = useState(isCompleted);
+  const [sets, setSets] = useState(logData?.sets?.toString() || targetSets.toString());
+  const [weight, setWeight] = useState(logData?.weight?.toString() || '');
+  const [repetitions, setRepetitions] = useState(logData?.repetitions?.toString() || targetReps?.toString() || '');
+  const [durationValue, setDurationValue] = useState(logData?.durationValue?.toString() || targetDurationValue?.toString() || '');
+  const [loggedDurationUnit, setLoggedDurationUnit] = useState((logData?.durationUnit as 'seconds' | 'minutes') || durationUnit);
+  const [notes, setNotes] = useState(logData?.notes || '');
+  const [saved, setSaved] = useState(false);
 
   const isDuration = trackingMode === 'duration';
 
@@ -47,8 +59,40 @@ export default function ExerciseLogForm({
     ? `${targetSets} × ${targetDurationValue ?? '?'} ${durationUnit === 'minutes' ? 'min' : 'sec'}`
     : `${targetSets} sets × ${targetReps || '?'} reps`;
 
+  const handleMarkDone = () => {
+    const newCompleted = !completed;
+    setCompleted(newCompleted);
+    setSaved(false);
+    // Immediately save when marking done
+    onLog({
+      completed: newCompleted,
+      trackingMode,
+      sets: sets ? parseInt(sets) : undefined,
+      weight: !isDuration && weight ? parseFloat(weight) : undefined,
+      repetitions: !isDuration && repetitions ? parseInt(repetitions) : undefined,
+      durationValue: isDuration && durationValue ? parseInt(durationValue) : undefined,
+      durationUnit: isDuration ? loggedDurationUnit : undefined,
+      notes: notes,
+    });
+  };
+
+  const handleSave = () => {
+    onLog({
+      completed,
+      trackingMode,
+      sets: sets ? parseInt(sets) : undefined,
+      weight: !isDuration && weight ? parseFloat(weight) : undefined,
+      repetitions: !isDuration && repetitions ? parseInt(repetitions) : undefined,
+      durationValue: isDuration && durationValue ? parseInt(durationValue) : undefined,
+      durationUnit: isDuration ? loggedDurationUnit : undefined,
+      notes: notes,
+    });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
   return (
-    <div className="card flex flex-col gap-3">
+    <div className={`card flex flex-col gap-3 ${isCompleted ? 'border-lime/30 bg-lime/5' : ''}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {isDuration ? (
@@ -56,13 +100,16 @@ export default function ExerciseLogForm({
           ) : (
             <Dumbbell className="w-4 h-4 text-lime flex-shrink-0" />
           )}
-          <span className="font-semibold">{exerciseName}</span>
+          <span className={`font-semibold ${isCompleted ? 'text-lime' : ''}`}>{exerciseName}</span>
+          {isCompleted && <span className="text-xs text-lime">✓</span>}
         </div>
         <button
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
-            completed ? 'bg-emerald-600/20 text-emerald-400' : 'bg-slate-700 text-slate-400'
+          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+            completed
+              ? 'bg-emerald-600/20 text-emerald-400'
+              : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
           }`}
-          onClick={() => setCompleted(!completed)}
+          onClick={handleMarkDone}
         >
           {completed ? '✓ Completed' : 'Mark done'}
         </button>
@@ -76,7 +123,8 @@ export default function ExerciseLogForm({
               className="input"
               type="number"
               value={sets}
-              onChange={(e) => setSets(e.target.value)}
+              onChange={(e) => { setSets(e.target.value); setSaved(false); }}
+              disabled={isCompleted}
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -86,7 +134,8 @@ export default function ExerciseLogForm({
               type="number"
               placeholder="—"
               value={durationValue}
-              onChange={(e) => setDurationValue(e.target.value)}
+              onChange={(e) => { setDurationValue(e.target.value); setSaved(false); }}
+              disabled={isCompleted}
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -94,7 +143,8 @@ export default function ExerciseLogForm({
             <select
               className="input"
               value={loggedDurationUnit}
-              onChange={(e) => setLoggedDurationUnit(e.target.value as 'seconds' | 'minutes')}
+              onChange={(e) => { setLoggedDurationUnit(e.target.value as 'seconds' | 'minutes'); setSaved(false); }}
+              disabled={isCompleted}
             >
               <option value="seconds">Seconds</option>
               <option value="minutes">Minutes</option>
@@ -109,7 +159,8 @@ export default function ExerciseLogForm({
               className="input"
               type="number"
               value={sets}
-              onChange={(e) => setSets(e.target.value)}
+              onChange={(e) => { setSets(e.target.value); setSaved(false); }}
+              disabled={isCompleted}
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -118,7 +169,8 @@ export default function ExerciseLogForm({
               className="input"
               type="number"
               value={repetitions}
-              onChange={(e) => setRepetitions(e.target.value)}
+              onChange={(e) => { setRepetitions(e.target.value); setSaved(false); }}
+              disabled={isCompleted}
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -127,7 +179,8 @@ export default function ExerciseLogForm({
               className="input"
               type="number"
               value={weight}
-              onChange={(e) => setWeight(e.target.value)}
+              onChange={(e) => { setWeight(e.target.value); setSaved(false); }}
+              disabled={isCompleted}
             />
           </div>
         </div>
@@ -142,26 +195,18 @@ export default function ExerciseLogForm({
         className="input"
         placeholder="Notes (e.g., felt easy, form issue)"
         value={notes}
-        onChange={(e) => setNotes(e.target.value)}
+        onChange={(e) => { setNotes(e.target.value); setSaved(false); }}
+        disabled={isCompleted}
       />
 
-      <button
-        className="btn-primary"
-        onClick={() =>
-          onLog({
-            completed,
-            trackingMode,
-            sets: sets ? parseInt(sets) : undefined,
-            weight: !isDuration && weight ? parseFloat(weight) : undefined,
-            repetitions: !isDuration && repetitions ? parseInt(repetitions) : undefined,
-            durationValue: isDuration && durationValue ? parseInt(durationValue) : undefined,
-            durationUnit: isDuration ? loggedDurationUnit : undefined,
-            notes: notes,
-          })
-        }
-      >
-        Save log
-      </button>
+      <div className="flex items-center gap-3">
+        {!isCompleted && (
+          <button className="btn-primary" onClick={handleSave}>
+            Save log
+          </button>
+        )}
+        {saved && <span className="text-sm text-lime">Saved ✓</span>}
+      </div>
     </div>
   );
 }

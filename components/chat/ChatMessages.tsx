@@ -14,6 +14,19 @@ function getMessageText(message: any): string {
   return '';
 }
 
+function hasToolCalls(message: any): boolean {
+  if (!message.parts) return false;
+  return message.parts.some((p: any) => p.type === 'tool-call' || p.type === 'tool-result');
+}
+
+function getToolNames(message: any): string[] {
+  if (!message.parts) return [];
+  return message.parts
+    .filter((p: any) => p.type === 'tool-call')
+    .map((p: any) => p.toolName || p.name)
+    .filter(Boolean);
+}
+
 interface ChatMessagesProps {
   messages: any[];
   isLoading: boolean;
@@ -46,7 +59,17 @@ export default function ChatMessages({ messages, isLoading, error, messagesEndRe
             {m.role === 'user' ? (
               <p className="text-sm whitespace-pre-wrap break-words">{getMessageText(m)}</p>
             ) : (
-              <MarkdownWithExerciseLinks content={getMessageText(m)} />
+              <>
+                {hasToolCalls(m) && getMessageText(m) === '' && (
+                  <div className="text-xs text-slate-500 italic flex items-center gap-1.5">
+                    <span className="animate-pulse">⚙️</span>
+                    Using tools: {getToolNames(m).join(', ')}...
+                  </div>
+                )}
+                {getMessageText(m) !== '' && (
+                  <MarkdownWithExerciseLinks content={getMessageText(m)} />
+                )}
+              </>
             )}
           </div>
         </div>
@@ -55,10 +78,13 @@ export default function ChatMessages({ messages, isLoading, error, messagesEndRe
       {isLoading && (
         <div className="flex items-start gap-2">
           <div className="rounded-xl bg-slate-800 px-3 py-2 text-sm text-slate-400">
-            <span className="inline-flex gap-1">
-              <span className="animate-bounce" style={{ animationDelay: '0ms' }}>●</span>
-              <span className="animate-bounce" style={{ animationDelay: '150ms' }}>●</span>
-              <span className="animate-bounce" style={{ animationDelay: '300ms' }}>●</span>
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-flex gap-1">
+                <span className="animate-bounce" style={{ animationDelay: '0ms' }}>●</span>
+                <span className="animate-bounce" style={{ animationDelay: '150ms' }}>●</span>
+                <span className="animate-bounce" style={{ animationDelay: '300ms' }}>●</span>
+              </span>
+              <span>Working on it...</span>
             </span>
           </div>
         </div>

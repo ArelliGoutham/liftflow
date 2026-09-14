@@ -1,5 +1,5 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { streamText, convertToModelMessages } from 'ai';
+import { streamText, convertToModelMessages, stepCountIs } from 'ai';
 import type { AIProvider, AIStreamResult } from './types';
 
 /**
@@ -30,6 +30,8 @@ export class GeminiProvider implements AIProvider {
     options?: {
       temperature?: number;
       maxOutputTokens?: number;
+      maxSteps?: number;
+      tools?: Record<string, any>;
       onFinish?: (completion: { text: string }) => void | Promise<void>;
     }
   ): Promise<AIStreamResult> {
@@ -47,7 +49,9 @@ export class GeminiProvider implements AIProvider {
       messages: modelMessages,
       temperature: options?.temperature ?? 0.7,
       maxOutputTokens: options?.maxOutputTokens ?? 500,
-      onFinish: options?.onFinish,
+      stopWhen: stepCountIs(options?.maxSteps ?? 5),
+      tools: options?.tools,
+      onFinish: options?.onFinish as any,
     });
     return result as unknown as AIStreamResult;
   }

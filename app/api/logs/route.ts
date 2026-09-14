@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { createLog, getLogsByExercise } from '@/lib/db/repositories/logRepository';
+import { createLog, getLogsByExercise, getLogsBySession } from '@/lib/db/repositories/logRepository';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,13 +10,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const exerciseId = new URL(request.url).searchParams.get('exerciseId');
-    if (!exerciseId) {
-      return NextResponse.json({ error: 'Missing exerciseId' }, { status: 400 });
+    const searchParams = new URL(request.url).searchParams;
+    const sessionId = searchParams.get('sessionId');
+    const exerciseId = searchParams.get('exerciseId');
+
+    if (sessionId) {
+      const logs = await getLogsBySession(sessionId);
+      return NextResponse.json(logs);
     }
 
-    const logs = await getLogsByExercise(session.user.id, exerciseId);
-    return NextResponse.json(logs);
+    if (exerciseId) {
+      const logs = await getLogsByExercise(session.user.id, exerciseId);
+      return NextResponse.json(logs);
+    }
+
+    return NextResponse.json({ error: 'Missing sessionId or exerciseId' }, { status: 400 });
   } catch (err) {
     console.error('[logs GET] Error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to fetch logs' }, { status: 500 });

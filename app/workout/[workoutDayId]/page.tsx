@@ -4,10 +4,41 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Dumbbell, AlertCircle } from 'lucide-react';
 import ExerciseLogForm from '@/components/workout/ExerciseLogForm';
-import type { IWorkoutDayClient } from '@/types';
+
+interface ExerciseInfo {
+  exerciseId: string;
+  exerciseName?: string;
+  name?: string;
+  order: number;
+  trackingMode?: 'reps' | 'duration';
+  targetSets: number;
+  targetRepetitions?: number;
+  targetDurationValue?: number;
+  durationUnit?: 'seconds' | 'minutes';
+  restSeconds: number;
+  notes?: string;
+  isCompleted?: boolean;
+  logData?: {
+    sets?: number;
+    weight?: number;
+    repetitions?: number;
+    durationValue?: number;
+    durationUnit?: string;
+    notes?: string;
+  };
+}
+
+interface WorkoutDay {
+  _id: string;
+  planId?: string;
+  title: string;
+  warmupInstructions?: string;
+  cardioInstructions?: string;
+  exercises: ExerciseInfo[];
+}
 
 export default function WorkoutSessionPage({ params }: { params: { workoutDayId: string } }) {
-  const [workoutDay, setWorkoutDay] = useState<IWorkoutDayClient | null>(null);
+  const [workoutDay, setWorkoutDay] = useState<WorkoutDay | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [logIds, setLogIds] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -27,9 +58,11 @@ export default function WorkoutSessionPage({ params }: { params: { workoutDayId:
           return;
         }
 
-        // Check for an existing uncompleted session today before creating a new one
+        // Check for an existing uncompleted session today
         const existingSessionsRes = await fetch('/api/sessions');
         let existingSessionId: string | null = null;
+        let existingLogs: any[] = [];
+
         if (existingSessionsRes.ok) {
           const existingSessions = await existingSessionsRes.json();
           if (Array.isArray(existingSessions)) {
@@ -40,15 +73,20 @@ export default function WorkoutSessionPage({ params }: { params: { workoutDayId:
                 !s.completedAt &&
                 s.startedAt?.startsWith(today)
             );
-            if (found) existingSessionId = found._id;
+            if (found) {
+              existingSessionId = found._id;
+              // Load existing logs for this session
+              const logsRes = await fetch(`/api/logs?sessionId=${found._id}`);
+              if (logsRes.ok) {
+                existingLogs = await logsRes.json();
+              }
+            }
           }
         }
 
-        if (existingSessionId) {
-          // Reuse existing session
-          setSessionId(existingSessionId);
-        } else {
-          // Create new session
+        let activeSessionId: string | null = existingSessionId;
+
+        if (!activeSessionId) {
           const sessionRes = await fetch('/api/sessions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -59,28 +97,62 @@ export default function WorkoutSessionPage({ params }: { params: { workoutDayId:
           });
           if (sessionRes.ok) {
             const session = await sessionRes.json();
-            setSessionId(session._id);
+            activeSessionId = session._id;
           }
         }
 
-        if (sessionId || existingSessionId) {
-          const activeSessionId = existingSessionId || sessionId;
-          for (const ex of day.exercises || []) {
-            const logRes = await fetch('/api/logs', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                sessionId: activeSessionId,
-                exerciseId: ex.exerciseId,
-                completed: false,
-                loggedAt: new Date(),
-              }),
-            });
-            if (logRes.ok) {
-              const log = await logRes.json();
-              setLogIds((prev) => ({ ...prev, [ex.exerciseId]: log._id }));
+        if (activeSessionId) {
+          setSessionId(activeSessionId);
+
+          // For each exercise: check if a log already exists, create if not
+          const newLogIds: Record<string, string> = {};
+          const updatedExercises = [...day.exercises];
+
+          for (const ex of day.exercises) {
+            // Look for existing log with this exercise in this session
+            const existingLog = existingLogs.find(
+              (l: any) => l.exerciseId === ex.exerciseId
+            );
+
+            if (existingLog) {
+              newLogIds[ex.exerciseId] = existingLog._id;
+              // Mark as completed if the log says so
+              const exIndex = updatedExercises.findIndex(e => e.exerciseId === ex.exerciseId);
+              if (exIndex >= 0) {
+                updatedExercises[exIndex] = {
+                  ...updatedExercises[exIndex],
+                  isCompleted: existingLog.completed,
+                  logData: {
+                    sets: existingLog.sets,
+                    weight: existingLog.weight,
+                    repetitions: existingLog.repetitions,
+                    durationValue: existingLog.durationValue,
+                    durationUnit: existingLog.durationUnit,
+                    notes: existingLog.notes,
+                  },
+                };
+              }
+            } else {
+              // Create a new log entry
+              const logRes = await fetch('/api/logs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  sessionId: activeSessionId,
+                  exerciseId: ex.exerciseId,
+                  completed: false,
+                  loggedAt: new Date(),
+                }),
+              });
+              if (logRes.ok) {
+                const log = await logRes.json();
+                newLogIds[ex.exerciseId] = log._id;
+              }
             }
           }
+
+          setLogIds(newLogIds);
+          setWorkoutDay({ ...day, exercises: updatedExercises });
         }
       } catch {
         setError('Could not load workout. Please try again.');
@@ -152,7 +224,7 @@ export default function WorkoutSessionPage({ params }: { params: { workoutDayId:
         <div className="card text-center py-8">
           <Dumbbell className="w-10 h-10 text-slate-600 mx-auto mb-3" />
           <p className="text-slate-400 mb-2">No exercises added to this workout day yet.</p>
-          <Link href={`/plans`} className="text-lime text-sm underline">
+          <Link href="/plans" className="text-lime text-sm underline">
             Add exercises in plan editor →
           </Link>
         </div>
@@ -169,6 +241,8 @@ export default function WorkoutSessionPage({ params }: { params: { workoutDayId:
                 trackingMode={ex.trackingMode || 'reps'}
                 targetDurationValue={ex.targetDurationValue}
                 durationUnit={ex.durationUnit}
+                isCompleted={ex.isCompleted}
+                logData={ex.logData}
                 onLog={(data) => handleLog(ex.exerciseId, data)}
               />
             ))}

@@ -31,6 +31,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+
+    if (!body.date || !/^\d{4}-\d{2}-\d{2}$/.test(body.date)) {
+      return NextResponse.json({ error: 'Valid date (YYYY-MM-DD) is required' }, { status: 400 });
+    }
+
     const day = await createWorkoutDay({
       ...body,
       userId: session.user.id,

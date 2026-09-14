@@ -52,19 +52,19 @@ describe('Repository Integration Tests (In-Memory MongoDB)', () => {
     });
 
     it('creates and retrieves workout days', async () => {
-      const day = await createWorkoutDay({ planId: PLAN_ID, userId: USER_A, title: 'Upper', dayOfWeek: 1 });
+      const day = await createWorkoutDay({ planId: PLAN_ID, userId: USER_A, title: 'Upper', date: '2026-09-14' });
       expect(day._id).toBeDefined();
       expect(await getPlanWorkoutDays(PLAN_ID)).toHaveLength(1);
     });
 
     it('updates workout day with user filter', async () => {
-      const day = await createWorkoutDay({ planId: PLAN_ID, userId: USER_A, title: 'Legs', dayOfWeek: 2 });
+      const day = await createWorkoutDay({ planId: PLAN_ID, userId: USER_A, title: 'Legs', date: '2026-09-15' });
       expect((await updateWorkoutDay(day._id.toString(), USER_A, { title: 'Changed' }))?.title).toBe('Changed');
       expect(await updateWorkoutDay(day._id.toString(), USER_B, { title: 'Hack' })).toBeNull();
     });
 
     it('deletes workout day with user filter', async () => {
-      const day = await createWorkoutDay({ planId: PLAN_ID, userId: USER_A, title: 'X', dayOfWeek: 3 });
+      const day = await createWorkoutDay({ planId: PLAN_ID, userId: USER_A, title: 'X', date: '2026-09-16' });
       expect(await deleteWorkoutDay(day._id.toString(), USER_B)).toBeNull();
       expect(await deleteWorkoutDay(day._id.toString(), USER_A)).toBeTruthy();
     });

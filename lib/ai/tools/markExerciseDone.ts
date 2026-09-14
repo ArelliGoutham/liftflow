@@ -50,10 +50,12 @@ export const markExerciseDoneTool: ToolDefinition = {
       if (dayWithExercise) {
         workoutDayId = dayWithExercise._id.toString();
       } else {
-        // Find today's day (by day of week)
-        const today = new Date().getDay();
-        const todayDow = today === 0 ? 7 : today;
-        const todayDay = days.find((d: any) => d.dayOfWeek === todayDow) || days[0];
+        // Find today's day by date
+        const todayDateStr = new Date().toISOString().split('T')[0];
+        const todayDay = days.find((d: any) => d.date === todayDateStr) || days[0];
+        if (!todayDay) {
+          return { error: 'No workout days found in your plan' };
+        }
         workoutDayId = todayDay._id.toString();
       }
     }
@@ -163,9 +165,8 @@ export const finishWorkoutTool: ToolDefinition = {
           return { error: 'No active workout session or plan found' };
         }
         const days = await getPlanWorkoutDays(activePlan._id.toString());
-        const today = new Date().getDay();
-        const todayDow = today === 0 ? 7 : today;
-        const todayDay = days.find((d: any) => d.dayOfWeek === todayDow) || days[0];
+        const todayDateStr = new Date().toISOString().split('T')[0];
+        const todayDay = days.find((d: any) => d.date === todayDateStr) || days[0];
         if (!todayDay) {
           return { error: 'No workout days found' };
         }

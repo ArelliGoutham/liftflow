@@ -261,8 +261,7 @@ export interface IWorkoutDayClient {
 /** Workout day summary used by plan detail page (all IDs as strings for client). */
 export interface IWorkoutDaySummary {
   _id: string;
-  weekNumber: number;
-  dayOfWeek: number;
+  date: string;
   title: string;
   warmupInstructions?: string;
   cardioInstructions?: string;

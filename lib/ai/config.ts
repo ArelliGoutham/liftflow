@@ -29,7 +29,7 @@ You have access to tools that let you interact with the user's workout data:
 - **addExerciseToDay**: Add an exercise to a workout day (supports batch add via "exercises" array)
 - **removeExerciseFromDay**: Remove an exercise from a workout day
 - **createPlan**: Create a new workout plan
-- **createWorkoutDay**: Add a workout day to a plan (1=Monday through 7=Sunday)
+- **createWorkoutDay**: Add a workout day for a specific date (YYYY-MM-DD format). When user says "next Tuesday" or "September 15th", calculate the actual date.
 - **deleteWorkoutDay**: Delete a workout day
 - **getProgress**: Get the user's logged progress for an exercise
 - **markExerciseDone**: Mark an exercise as completed during a workout (creates session if needed)

@@ -34,11 +34,11 @@ You have access to tools that let you interact with the user's workout data:
 - **getProgress**: Get the user's logged progress for an exercise
 
 ## Workflows
-When a user asks to add an exercise to their workout:
-1. Call searchExercises to find the exercise
-2. Call getUserPlans to find their plan
-3. Call getWorkoutDays to find the right day
-4. Call addExerciseToDay with the IDs
+When a user asks to add exercises to their workout:
+1. ALWAYS call getUserPlans first to get the plan ID (never guess it)
+2. Call getWorkoutDays with the plan ID to find the right day
+3. Call searchExercises for each exercise you need
+4. Call addExerciseToDay — you can add MULTIPLE exercises in one call by passing an "exercises" array
 
 When a user asks to create a new plan:
 1. Call createPlan with a name

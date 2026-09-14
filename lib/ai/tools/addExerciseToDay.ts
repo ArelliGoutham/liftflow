@@ -37,18 +37,29 @@ export const addExerciseToDayTool: ToolDefinition = {
     }
 
     const exercises = day.exercises || [];
-    const nextOrder = exercises.length > 0 ? Math.max(...exercises.map((e: any) => e.order ?? 0)) + 1 : 0;
+    // Find the highest existing order to append after
+    let nextOrder = exercises.length > 0 ? Math.max(...exercises.map((e: any) => e.order ?? 0)) + 1 : 0;
 
-    const newExercise = {
-      exerciseId,
-      order: nextOrder,
-      trackingMode,
-      targetSets: params.targetSets || 3,
-      targetRepetitions: trackingMode === 'reps' ? targetReps : undefined,
-      targetDurationValue: trackingMode === 'duration' ? targetDuration : undefined,
-      durationUnit: trackingMode === 'duration' ? (params.durationUnit || 'seconds') : undefined,
-      restSeconds: params.restSeconds || 90,
-    };
+    // Support adding multiple exercises at once via an exercises array param
+    const exercisesToAdd = params.exercises || [{ exerciseId, targetSets: params.targetSets || 3, trackingMode, targetReps, targetDuration, durationUnit: params.durationUnit, restSeconds: params.restSeconds || 90 }];
+
+    const newExercises = exercisesToAdd.map((ex: any) => {
+      const exId = ex.exerciseId || ex.exercise_id;
+      const exTracking = ex.trackingMode || ex.tracking_mode || 'reps';
+      const exReps = ex.targetRepetitions ?? ex.reps ?? ex.targetReps;
+      const exDuration = ex.targetDurationValue ?? ex.duration ?? ex.targetDuration;
+      const newEx = {
+        exerciseId: exId,
+        order: nextOrder++,
+        trackingMode: exTracking,
+        targetSets: ex.targetSets || ex.sets || 3,
+        targetRepetitions: exTracking === 'reps' ? exReps : undefined,
+        targetDurationValue: exTracking === 'duration' ? exDuration : undefined,
+        durationUnit: exTracking === 'duration' ? (ex.durationUnit || 'seconds') : undefined,
+        restSeconds: ex.restSeconds || 90,
+      };
+      return newEx;
+    });
 
     const updated = await updateWorkoutDay(workoutDayId, context.userId, {
       exercises: [...exercises.map((e: any) => ({
@@ -60,13 +71,14 @@ export const addExerciseToDayTool: ToolDefinition = {
         targetDurationValue: e.targetDurationValue,
         durationUnit: e.durationUnit,
         restSeconds: e.restSeconds,
-      })), newExercise],
+      })), ...newExercises],
     });
 
     if (!updated) {
       return { error: 'Failed to add exercise' };
     }
 
-    return { success: true, message: `Exercise added to ${day.title}`, exerciseId, sets: params.targetSets || 3 };
+    const addedNames = newExercises.map((e: any) => e.exerciseId).join(', ');
+    return { success: true, message: `Added ${newExercises.length} exercise(s) to ${day.title}: ${addedNames}`, count: newExercises.length };
   },
 };

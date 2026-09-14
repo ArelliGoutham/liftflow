@@ -11,7 +11,7 @@ import type { IWorkoutDay, IWorkoutDayWithNames, IExternalExercise } from '@/typ
  */
 export async function getPlanWorkoutDays(planId: string): Promise<IWorkoutDay[]> {
   await connectToDatabase();
-  return WorkoutDay.find({ planId }).sort({ weekNumber: 1, dayOfWeek: 1 }).lean() as unknown as Promise<IWorkoutDay[]>;
+  return WorkoutDay.find({ planId }).sort({ date: 1 }).lean() as unknown as Promise<any[]>;
 }
 
 /**
@@ -147,6 +147,17 @@ export async function deleteWorkoutDay(id: string, userId: string): Promise<IWor
  * @param planId - The plan's MongoDB ObjectId as a string
  * @returns Promise that resolves when all workout days for the plan have been deleted
  */
+/**
+ * Finds a workout day by plan ID and date.
+ * @param planId - The plan ID
+ * @param date - The date in YYYY-MM-DD format
+ * @returns The workout day or null if not found
+ */
+export async function getWorkoutDayByDate(planId: string, date: string): Promise<any | null> {
+  await connectToDatabase();
+  return WorkoutDay.findOne({ planId, date }).lean() as unknown as Promise<any | null>;
+}
+
 export async function deletePlanWorkoutDays(planId: string): Promise<void> {
   await connectToDatabase();
   await WorkoutDay.deleteMany({ planId });

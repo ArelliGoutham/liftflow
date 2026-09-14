@@ -27,8 +27,15 @@ export const addExerciseToDayTool: ToolDefinition = {
     const targetDuration = params.targetDurationValue ?? params.duration;
     const trackingMode = params.trackingMode || 'reps';
 
-    if (!workoutDayId || !exerciseId) {
-      return { error: 'Missing workoutDayId or exerciseId', received: { workoutDayId, exerciseId } };
+    // When using batch mode (exercises array), exerciseId is not required at top level
+    const isBatchMode = !!(params.exercises && Array.isArray(params.exercises) && params.exercises.length > 0);
+
+    if (!workoutDayId) {
+      return { error: 'Missing workoutDayId', received: params };
+    }
+
+    if (!isBatchMode && !exerciseId) {
+      return { error: 'Missing exerciseId', received: params };
     }
 
     const day: any = await getWorkoutDayWithExerciseNames(workoutDayId, context.userId);

@@ -1,6 +1,7 @@
 'use client';
 
 import ExerciseSections from './ExerciseSections';
+import { getDetailImageUrl } from '@/lib/exercises/externalExercises';
 
 export interface ExerciseDetailData {
   name: string;
@@ -48,7 +49,7 @@ export default function ExerciseDetail({ exercise }: ExerciseDetailProps) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={url}
+                src={getDetailImageUrl(url)}
                 alt={`${exercise.name} - pose ${i + 1}`}
                 className="w-full h-auto max-h-72 object-contain"
                 loading="lazy"

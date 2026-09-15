@@ -1,16 +1,10 @@
 import { NextRequest } from 'next/server';
-import { consumeAuthCode } from '@/lib/mcp/authCodeStore';
+import { consumeAuthCode } from '@/lib/db/repositories/authCodeRepository';
 import { verifyPkce, TOKEN_TTL_SECONDS } from '@/lib/mcp/oauthUtils';
 import { createToken } from '@/lib/db/repositories/oauthTokenRepository';
 
 export const runtime = 'nodejs';
 
-/**
- * OAuth 2.0 Token endpoint.
- * POST exchanges an authorization code for an access token.
- * Validates the code, checks PKCE (code_verifier against stored code_challenge),
- * and issues a 24-hour access token stored in the OAuthToken collection.
- */
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData().catch(() => null);
@@ -41,8 +35,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Consume the auth code (single-use)
-    const authCode = consumeAuthCode(code as string);
+    const authCode = await consumeAuthCode(code as string);
     if (!authCode) {
       return new Response(
         JSON.stringify({ error: 'invalid_grant', error_description: 'Authorization code is invalid or expired' }),
@@ -50,7 +43,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate client_id and redirect_uri match
     if (authCode.clientId !== clientId || authCode.redirectUri !== redirectUri) {
       return new Response(
         JSON.stringify({ error: 'invalid_grant', error_description: 'Client or redirect mismatch' }),
@@ -58,7 +50,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify PKCE
     if (!verifyPkce(codeVerifier as string, authCode.codeChallenge)) {
       return new Response(
         JSON.stringify({ error: 'invalid_grant', error_description: 'PKCE verification failed' }),
@@ -66,11 +57,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Issue access token
     const accessToken = await createToken(
-      authCode.userId,
+      authCode.userId.toString(),
       authCode.clientId,
-      authCode.scope
+      'tools'
     );
 
     return new Response(
@@ -78,7 +68,7 @@ export async function POST(request: NextRequest) {
         access_token: accessToken,
         token_type: 'bearer',
         expires_in: TOKEN_TTL_SECONDS,
-        scope: authCode.scope,
+        scope: 'tools',
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );

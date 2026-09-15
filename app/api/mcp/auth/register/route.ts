@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { registerClient } from '@/lib/mcp/clientStore';
+import { registerOAuthClient } from '@/lib/db/repositories/oauthClientRepository';
 
 export const runtime = 'nodejs';
 
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
         ? [body.redirect_uris]
         : [];
 
-    const client = registerClient(redirectUris);
+    const client = await registerOAuthClient(redirectUris);
 
     return new Response(
       JSON.stringify({

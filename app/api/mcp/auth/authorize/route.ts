@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createAuthCode } from '@/lib/db/repositories/authCodeRepository';
+import { getOAuthClient, isValidRedirectUri } from '@/lib/db/repositories/oauthClientRepository';
 import { getOAuthBaseUrl } from '@/lib/mcp/oauthUtils';
 
 export const runtime = 'nodejs';
@@ -32,6 +33,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const client = await getOAuthClient(clientId);
+    if (!client) {
+      return new NextResponse(
+        JSON.stringify({ error: 'invalid_client' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const validRedirect = await isValidRedirectUri(clientId, redirectUri);
+    if (!validRedirect) {
+      return new NextResponse(
+        JSON.stringify({ error: 'invalid_request', error_description: 'redirect_uri does not match registered URIs' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -52,6 +69,7 @@ export async function GET(request: NextRequest) {
 
     const redirectUrl = new URL(redirectUri);
     redirectUrl.searchParams.set('code', code);
+    // State is passed through for the client to validate (CSRF protection per RFC 6749 Section 10.12)
     if (state) redirectUrl.searchParams.set('state', state);
 
     return NextResponse.redirect(redirectUrl);

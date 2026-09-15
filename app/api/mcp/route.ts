@@ -68,11 +68,14 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice(7);
-      const tokenUserId = await validateToken(token);
-      if (!tokenUserId) {
+      const tokenResult = await validateToken(token);
+      if (!tokenResult) {
         return unauthorizedResponse('Invalid or expired token');
       }
-      userId = tokenUserId;
+      if (tokenResult.scope !== 'tools') {
+        return unauthorizedResponse('Insufficient scope');
+      }
+      userId = tokenResult.userId;
     } else {
       const session = await getServerSession(authOptions);
       if (!session?.user?.id) {

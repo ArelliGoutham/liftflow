@@ -310,8 +310,15 @@ export interface IOAuthToken {
   userId: ObjectId;
   clientId: string;
   scope: string;
+  refreshToken?: string;
   createdAt: Date;
   expiresAt: Date;
+}
+
+/** Result returned by validateToken containing the user and granted scope. */
+export interface ITokenValidationResult {
+  userId: string;
+  scope: string;
 }
 
 /** Volatile in-memory authorization code (10-minute TTL, single-use). */

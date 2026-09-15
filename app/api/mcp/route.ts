@@ -55,6 +55,11 @@ export async function POST(request: NextRequest) {
       return jsonrpcResponse(id, {});
     }
 
+    // notifications/initialized — acknowledge without auth
+    if (method === 'notifications/initialized') {
+      return new Response(null, { status: 200 });
+    }
+
     // For tools/list and tools/call, require auth
     let userId: string | undefined;
     let email: string | undefined;
@@ -124,11 +129,6 @@ export async function POST(request: NextRequest) {
           isError: true,
         });
       }
-    }
-
-    // notifications/initialized — just return 200
-    if (method === 'notifications/initialized') {
-      return new Response(null, { status: 200 });
     }
 
     return jsonrpcError(id, -32601, `Unknown method: ${method}`);

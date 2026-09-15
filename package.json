@@ -15,6 +15,7 @@
   "dependencies": {
     "@ai-sdk/google": "^4.0.69",
     "@ai-sdk/react": "^4.0.102",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "ai": "^7.0.99",
     "lucide-react": "^0.395.0",
     "mongoose": "^8.4.3",

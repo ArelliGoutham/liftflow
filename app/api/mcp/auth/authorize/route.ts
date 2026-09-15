@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { storeAuthCode } from '@/lib/mcp/authCodeStore';
+import { createAuthCode } from '@/lib/db/repositories/authCodeRepository';
+import { getOAuthClient, isValidRedirectUri } from '@/lib/db/repositories/oauthClientRepository';
 import { getOAuthBaseUrl } from '@/lib/mcp/oauthUtils';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/**
- * OAuth 2.0 Authorization endpoint.
- * GET checks for an existing NextAuth session. If signed in, issues an
- * authorization code and redirects to the client's redirect_uri. If not
- * signed in, redirects to /login with a callbackUrl preserving all query
- * params so the user returns here after authentication.
- */
 export async function GET(request: NextRequest) {
   try {
     const params = request.nextUrl.searchParams;
@@ -39,11 +33,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check for existing NextAuth session
+    const client = await getOAuthClient(clientId);
+    if (!client) {
+      return new NextResponse(
+        JSON.stringify({ error: 'invalid_client' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const validRedirect = await isValidRedirectUri(clientId, redirectUri);
+    if (!validRedirect) {
+      return new NextResponse(
+        JSON.stringify({ error: 'invalid_request', error_description: 'redirect_uri does not match registered URIs' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      // Not signed in — redirect to login, preserving callback
       const baseUrl = getOAuthBaseUrl();
       const authorizeUrl = `${baseUrl}/api/mcp/auth/authorize?${params.toString()}`;
       const loginUrl = new URL('/login', baseUrl);
@@ -51,21 +59,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    // User is signed in — issue authorization code
-    const code = storeAuthCode(
+    const code = await createAuthCode(
       session.user.id,
       clientId,
       redirectUri,
       codeChallenge,
-      codeChallengeMethod,
-      scope
+      codeChallengeMethod
     );
 
     const redirectUrl = new URL(redirectUri);
     redirectUrl.searchParams.set('code', code);
-    if (state) {
-      redirectUrl.searchParams.set('state', state);
-    }
+    // State is passed through for the client to validate (CSRF protection per RFC 6749 Section 10.12)
+    if (state) redirectUrl.searchParams.set('state', state);
 
     return NextResponse.redirect(redirectUrl);
   } catch (err) {

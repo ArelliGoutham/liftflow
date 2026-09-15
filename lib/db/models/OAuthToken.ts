@@ -7,6 +7,7 @@ const OAuthTokenSchema = new Schema<IOAuthToken>(
     userId: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
     clientId: { type: String, required: true },
     scope: { type: String, default: 'tools' },
+    refreshToken: { type: String, default: null, index: true, sparse: true },
     expiresAt: { type: Date, required: true },
   },
   { timestamps: true }

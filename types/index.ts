@@ -301,3 +301,35 @@ export interface ILogEntry {
   sets?: number;
   completed: boolean;
 }
+
+// ─── OAuth 2.0 / MCP Auth ───────────────────────────────────────────────────
+
+/** Stored OAuth access token issued by the LiftFlow authorization server. */
+export interface IOAuthToken {
+  token: string;
+  userId: ObjectId;
+  clientId: string;
+  scope: string;
+  createdAt: Date;
+  expiresAt: Date;
+}
+
+/** Volatile in-memory authorization code (10-minute TTL, single-use). */
+export interface IAuthCode {
+  userId: string;
+  clientId: string;
+  redirectUri: string;
+  codeChallenge: string;
+  codeChallengeMethod: string;
+  scope: string;
+  expiresAt: number;
+}
+
+/** Volatile in-memory client registration (RFC 7591 dynamic registration). */
+export interface IOAuthClient {
+  clientId: string;
+  clientSecret: string | null;
+  redirectUris: string[];
+  tokenEndpointAuthMethod: string;
+  issuedAt: number;
+}

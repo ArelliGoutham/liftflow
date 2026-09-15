@@ -1,38 +1,74 @@
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { createLiftFlowMCPServer } from '@/lib/mcp/registerTools';
 import { allTools } from '@/lib/ai/tools';
 import type { ToolContext } from '@/lib/ai/tools/types';
+import { validateToken } from '@/lib/db/repositories/oauthTokenRepository';
+import { getOAuthBaseUrl } from '@/lib/mcp/oauthUtils';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
+ * Returns a 401 response with the WWW-Authenticate header pointing to the
+ * OAuth 2.0 Protected Resource Metadata endpoint, as required by MCP spec.
+ * @param message - Optional error message for the response body
+ * @returns 401 Response with WWW-Authenticate header
+ */
+function unauthorizedResponse(message: string): Response {
+  const baseUrl = getOAuthBaseUrl();
+  return new Response(
+    JSON.stringify({ error: message }),
+    {
+      status: 401,
+      headers: {
+        'Content-Type': 'application/json',
+        'WWW-Authenticate': `Bearer resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`,
+      },
+    }
+  );
+}
+
+/**
  * MCP Server endpoint using Streamable HTTP transport.
- * Supports multi-user auth via NextAuth session.
- * 
- * Clients (Claude Desktop, Cursor, etc.) connect to this endpoint.
- * If not authenticated, returns 401 to trigger OAuth flow.
+ * Supports two auth modes:
+ * 1. OAuth 2.0 Bearer token (for MCP clients — Copilot, VS Code, etc.)
+ * 2. NextAuth session (for web-app browser usage)
+ *
+ * If not authenticated, returns 401 with WWW-Authenticate header to trigger OAuth flow.
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized — sign in at /login to use LiftFlow MCP' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      );
+    let userId: string | undefined;
+    let email: string | undefined;
+    let name: string | undefined;
+
+    // Check for OAuth Bearer token first
+    const authHeader = request.headers.get('authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.slice(7);
+      const tokenUserId = await validateToken(token);
+      if (tokenUserId) {
+        userId = tokenUserId;
+      } else {
+        return unauthorizedResponse('Invalid or expired token');
+      }
+    } else {
+      // Fall back to NextAuth session for browser-based usage
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return unauthorizedResponse('Unauthorized — sign in at /login or provide a Bearer token to use LiftFlow MCP');
+      }
+      userId = session.user.id;
+      email = session.user.email || undefined;
+      name = session.user.name || undefined;
     }
 
     const context: ToolContext = {
-      userId: session.user.id,
-      email: session.user.email || undefined,
-      name: session.user.name || undefined,
+      userId,
+      email,
+      name,
     };
-
-    const server = createLiftFlowMCPServer(context);
 
     // Handle MCP JSON-RPC request
     const body = await request.json();

@@ -41,7 +41,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const validRedirect = await isValidRedirectUri(clientId, redirectUri);
+    // Validate redirect_uri — allow any localhost/127.0.0.1 URI for MCP clients
+    // MCP clients (VS Code, Claude Desktop) use dynamic local ports that change on restart
+    const isLocalRedirect = redirectUri.startsWith('http://localhost:') || redirectUri.startsWith('http://127.0.0.1:');
+    const validRedirect = isLocalRedirect || await isValidRedirectUri(clientId, redirectUri);
     if (!validRedirect) {
       return new NextResponse(
         JSON.stringify({ error: 'invalid_request', error_description: 'redirect_uri does not match registered URIs' }),

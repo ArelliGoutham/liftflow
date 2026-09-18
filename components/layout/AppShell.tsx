@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Dumbbell, LayoutGrid, CalendarDays, TrendingUp, Settings } from 'lucide-react';
 import UserMenu from '@/components/auth/UserMenu';
 import ChatAssistant from '@/components/chat/ChatAssistant';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 interface NavItem {
   label: string;
@@ -88,7 +89,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               {isLanding ? 'LIFTFLOW' : 'YOUR TRAINING SPACE'}
             </Link>
 
-            <div className="flex items-center gap-3 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <ThemeToggle />
               {status === 'loading' && (
                 <div className="h-8 w-8 animate-pulse rounded-full bg-slate-700" />
               )}

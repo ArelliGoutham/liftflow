@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
+  darkMode: 'class',
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -8,9 +9,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        charcoal: '#111312',
-        panel: '#191d19',
-        lime: '#c5f36b',
+        charcoal: {
+          DEFAULT: '#111312',
+          light: '#f8faf9',
+        },
+        panel: {
+          DEFAULT: '#191d19',
+          light: '#ffffff',
+        },
+        lime: {
+          DEFAULT: '#c5f36b',
+          dark: '#519015',
+        },
         primary: {
           50: '#f0fde8',
           100: '#e3fcc6',

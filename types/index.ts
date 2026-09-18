@@ -88,8 +88,9 @@ export interface IWeekSchedule {
 
 export interface IWorkoutDay {
   _id: ObjectId;
-  planId: ObjectId;
+  planId?: ObjectId;
   userId: ObjectId;
+  type?: 'planned' | 'quick';
   date: string;
   title: string;
   warmupInstructions?: string;
@@ -131,8 +132,9 @@ export interface IExercise {
 export interface IWorkoutSession {
   _id: ObjectId;
   userId: ObjectId;
-  planId: ObjectId;
-  workoutDayId: ObjectId;
+  planId?: ObjectId;
+  workoutDayId?: ObjectId;
+  type?: 'planned' | 'quick';
   startedAt: Date;
   completedAt?: Date;
   notes?: string;

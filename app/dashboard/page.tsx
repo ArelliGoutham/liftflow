@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { Dumbbell, Plus, AlertCircle, RefreshCw, CalendarClock, Moon, ArrowRight, UserPlus } from 'lucide-react';
+import { Dumbbell, Plus, AlertCircle, RefreshCw, CalendarClock, Moon, ArrowRight, UserPlus, Zap } from 'lucide-react';
 import WeekStrip from '@/components/dashboard/WeekStrip';
 
 interface DaySchedule {
@@ -125,6 +125,15 @@ export default function DashboardPage() {
           <Dumbbell className="w-6 h-6 text-lime group-hover:scale-110 transition-transform" />
         </Link>
       </div>
+
+      <Link href="/workout/quick" className="card group hover:border-lime/50 p-6 flex items-center justify-between border-lime/30 bg-lime/5">
+        <div>
+          <p className="eyebrow">No plan? No problem</p>
+          <p className="heading-2">Quick Workout</p>
+          <p className="text-sm text-slate-400 mt-1">Start tracking exercises on the fly</p>
+        </div>
+        <Zap className="w-8 h-8 text-lime group-hover:scale-110 transition-transform" />
+      </Link>
 
       {error && (
         <div role="alert" className="card border-red-500/50 bg-red-500/10">

@@ -26,8 +26,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+
+    // Quick workouts have no planId or workoutDayId — set type accordingly
+    const isQuick = !body.planId && !body.workoutDayId;
     const created = await createSession({
       ...body,
+      ...(isQuick ? { planId: undefined, workoutDayId: undefined, type: 'quick' as const } : {}),
       userId: session.user.id,
       startedAt: new Date(),
     });

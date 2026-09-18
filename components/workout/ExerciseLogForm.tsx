@@ -3,6 +3,18 @@
 import { useState, useEffect } from 'react';
 import { Dumbbell, Clock } from 'lucide-react';
 
+/** Data shape passed from ExerciseLogForm to the parent via onLog. */
+export interface ExerciseLogData {
+  completed: boolean;
+  trackingMode: 'reps' | 'duration';
+  sets?: number;
+  weight?: number;
+  repetitions?: number;
+  durationValue?: number;
+  durationUnit?: 'seconds' | 'minutes';
+  notes?: string;
+}
+
 interface ExerciseLogFormProps {
   exerciseName: string;
   targetSets: number;
@@ -20,16 +32,7 @@ interface ExerciseLogFormProps {
     durationUnit?: string;
     notes?: string;
   };
-  onLog: (data: {
-    completed: boolean;
-    trackingMode: 'reps' | 'duration';
-    sets?: number;
-    weight?: number;
-    repetitions?: number;
-    durationValue?: number;
-    durationUnit?: 'seconds' | 'minutes';
-    notes?: string;
-  }) => void;
+  onLog: (data: ExerciseLogData) => void;
 }
 
 export default function ExerciseLogForm({

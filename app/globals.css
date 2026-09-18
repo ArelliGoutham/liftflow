@@ -3,9 +3,15 @@
 @tailwind utilities;
 
 @layer base {
+  /* Dark theme (default) */
   body {
     @apply bg-charcoal text-slate-100 antialiased;
     font-family: 'Avenir Next', 'Avenir', 'Segoe UI', sans-serif;
+  }
+
+  /* Light theme */
+  .light body {
+    @apply bg-slate-50 text-slate-900;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -38,6 +44,9 @@
   .text-muted {
     @apply text-slate-400;
   }
+  .light .text-muted {
+    @apply text-slate-600;
+  }
 }
 
 @layer components {
@@ -48,33 +57,57 @@
   .btn-primary {
     @apply btn bg-lime text-charcoal hover:bg-lime/90 font-semibold;
   }
+  .light .btn-primary {
+    @apply btn bg-lime-dark text-white hover:bg-lime-dark/90 font-semibold;
+  }
 
   .btn-secondary {
     @apply btn bg-slate-700 text-slate-100 hover:bg-slate-600;
+  }
+  .light .btn-secondary {
+    @apply btn bg-slate-200 text-slate-700 hover:bg-slate-300;
   }
 
   .input {
     @apply w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 min-h-[44px] text-sm text-slate-100 placeholder-slate-500 focus:border-lime focus:outline-none;
   }
+  .light .input {
+    @apply border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:border-lime-dark;
+  }
 
   .card {
     @apply rounded-xl border border-slate-700 bg-panel p-4;
+  }
+  .light .card {
+    @apply border-slate-200 bg-white;
   }
 
   .eyebrow {
     @apply text-xs font-bold uppercase tracking-wider text-lime;
   }
+  .light .eyebrow {
+    @apply text-lime-dark;
+  }
 
   .page-title {
     @apply text-3xl font-bold tracking-tight text-slate-100;
+  }
+  .light .page-title {
+    @apply text-slate-900;
   }
 
   .heading-2 {
     @apply text-2xl font-bold text-slate-100;
   }
+  .light .heading-2 {
+    @apply text-slate-900;
+  }
 
   .heading-3 {
     @apply text-lg font-semibold text-slate-100;
+  }
+  .light .heading-3 {
+    @apply text-slate-900;
   }
 
   .safe-area-inset {
@@ -85,4 +118,3 @@
     @apply absolute left-0 top-0 -translate-x-full bg-lime px-4 py-2 text-charcoal font-semibold focus:translate-x-0;
   }
 }
-

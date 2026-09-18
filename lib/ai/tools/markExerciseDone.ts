@@ -28,6 +28,48 @@ export const markExerciseDoneTool: ToolDefinition = {
     const exerciseId = params.exerciseId || params.exercise_id;
     let workoutDayId = params.workoutDayId || params.dayId;
 
+    // Check for an active quick session today first — quick workouts don't need a workout day
+    const { getRecentSessions } = await import('@/lib/db/repositories/sessionRepository');
+    const recentSessions = await getRecentSessions(context.userId, 10);
+    const today = new Date().toISOString().split('T')[0];
+
+    const activeQuickSession: any = recentSessions.find(
+      (s: any) => {
+        const startedAt = s.startedAt instanceof Date ? s.startedAt.toISOString() : (typeof s.startedAt === 'string' ? s.startedAt : '');
+        return s.type === 'quick' && !s.completedAt && startedAt.startsWith(today);
+      }
+    );
+
+    // If a quick session is active, we can log the exercise directly without a workout day
+    if (activeQuickSession && !workoutDayId) {
+      const trackingMode = params.trackingMode || 'reps';
+      const log = await createLog({
+        userId: context.userId as any,
+        sessionId: activeQuickSession._id?.toString() as any,
+        exerciseId,
+        completed: true,
+        trackingMode,
+        sets: params.sets,
+        weight: params.weight,
+        repetitions: trackingMode === 'reps' ? params.reps : undefined,
+        durationValue: trackingMode === 'duration' ? params.durationValue : undefined,
+        durationUnit: trackingMode === 'duration' ? (params.durationUnit || 'seconds') : undefined,
+        notes: params.notes || '',
+        loggedAt: new Date(),
+      });
+
+      return {
+        success: true,
+        message: `Marked exercise as completed in quick workout`,
+        sessionId: activeQuickSession._id?.toString(),
+        logId: log._id?.toString(),
+        trackingMode,
+        sets: params.sets,
+        reps: trackingMode === 'reps' ? params.reps : undefined,
+        weight: params.weight,
+      };
+    }
+
     // If no workoutDayId, auto-detect from user's active plan
     if (!workoutDayId) {
       const { getUserPlans } = await import('@/lib/db/repositories/planRepository');
@@ -71,10 +113,6 @@ export const markExerciseDoneTool: ToolDefinition = {
     const trackingMode = params.trackingMode || exerciseConfig?.trackingMode || 'reps';
 
     // Check if there's an uncompleted session today for this day
-    const { getRecentSessions } = await import('@/lib/db/repositories/sessionRepository');
-    const recentSessions = await getRecentSessions(context.userId, 10);
-    const today = new Date().toISOString().split('T')[0];
-
     let session: any = recentSessions.find(
       (s: any) => {
         const startedAt = s.startedAt instanceof Date ? s.startedAt.toISOString() : (typeof s.startedAt === 'string' ? s.startedAt : '');

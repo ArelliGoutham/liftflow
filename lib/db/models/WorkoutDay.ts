@@ -16,8 +16,9 @@ const WorkoutExerciseSchema = new Schema(
 
 const WorkoutDaySchema = new Schema(
   {
-    planId: { type: Schema.Types.ObjectId, required: true, ref: 'Plan' },
+    planId: { type: Schema.Types.ObjectId, ref: 'Plan' },
     userId: { type: Schema.Types.ObjectId, required: true, ref: 'User', index: true },
+    type: { type: String, enum: ['planned', 'quick'], default: 'planned' },
     date: { type: String, required: true },
     title: { type: String, required: true },
     warmupInstructions: { type: String },
@@ -27,7 +28,12 @@ const WorkoutDaySchema = new Schema(
   { timestamps: true }
 );
 
-WorkoutDaySchema.index({ planId: 1, date: 1 }, { unique: true });
+// Only enforce uniqueness for planned workouts (which have a planId)
+// Quick workouts have no planId so partial filter avoids conflicts
+WorkoutDaySchema.index(
+  { planId: 1, date: 1 },
+  { unique: true, partialFilterExpression: { planId: { $type: 'objectId' } } }
+);
 
 const WorkoutDay = mongoose.models.WorkoutDay || mongoose.model('WorkoutDay', WorkoutDaySchema);
 

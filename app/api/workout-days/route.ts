@@ -36,8 +36,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Valid date (YYYY-MM-DD) is required' }, { status: 400 });
     }
 
+    // Quick workouts have no planId — set type accordingly
+    const isQuick = !body.planId;
     const day = await createWorkoutDay({
       ...body,
+      ...(isQuick ? { planId: undefined, type: 'quick' as const } : {}),
       userId: session.user.id,
     });
 

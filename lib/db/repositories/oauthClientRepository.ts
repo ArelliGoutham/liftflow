@@ -38,6 +38,25 @@ export async function getOAuthClient(clientId: string): Promise<any | null> {
 }
 
 /**
+ * Registers an OAuth client with a specific client_id (auto-registration
+ * for MCP clients that cached an old ID from before MongoDB migration).
+ * @param clientId - The client_id to register
+ * @param redirectUris - Array of allowed redirect URIs
+ * @returns The created client record
+ */
+export async function registerOAuthClientForClientId(clientId: string, redirectUris: string[]): Promise<any> {
+  await connectToDatabase();
+  const existing = await OAuthClient.findOne({ clientId });
+  if (existing) return existing;
+  return await OAuthClient.create({
+    clientId,
+    clientSecret: null,
+    redirectUris,
+    tokenEndpointAuthMethod: 'none',
+  });
+}
+
+/**
  * Validates a redirect URI for a client.
  * @param clientId - The client identifier
  * @param redirectUri - The redirect URI to validate

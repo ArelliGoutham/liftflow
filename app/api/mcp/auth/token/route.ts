@@ -86,7 +86,13 @@ async function handleAuthorizationCodeGrant(formData: FormData): Promise<Respons
     );
   }
 
-  if (authCode.clientId !== clientId || authCode.redirectUri !== redirectUri) {
+  // Normalize redirect URIs for comparison (trailing slashes often differ between authorize and token requests)
+  const normalizeUri = (uri: string) => uri?.replace(/\/+$/, '') || '';
+  const authRedirect = normalizeUri(authCode.redirectUri);
+  const tokenRedirect = normalizeUri(redirectUri as string);
+  
+  if (authCode.clientId !== clientId || authRedirect !== tokenRedirect) {
+    console.error('[OAuth token] Mismatch - stored:', { clientId: authCode.clientId, redirectUri: authCode.redirectUri }, 'received:', { clientId, redirectUri });
     return new Response(
       JSON.stringify({ error: 'invalid_grant', error_description: 'Client or redirect mismatch' }),
       { status: 400, headers: { 'Content-Type': 'application/json' } }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createAuthCode } from '@/lib/db/repositories/authCodeRepository';
-import { getOAuthClient, isValidRedirectUri } from '@/lib/db/repositories/oauthClientRepository';
+import { getOAuthClient, isValidRedirectUri, registerOAuthClientForClientId } from '@/lib/db/repositories/oauthClientRepository';
 import { getOAuthBaseUrl } from '@/lib/mcp/oauthUtils';
 
 export const runtime = 'nodejs';
@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
     const codeChallenge = params.get('code_challenge');
     const codeChallengeMethod = params.get('code_challenge_method') || 'S256';
     const state = params.get('state');
-    const scope = params.get('scope') || 'tools';
 
     if (!responseType || !clientId || !redirectUri || !codeChallenge) {
       return new NextResponse(
@@ -33,21 +32,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const client = await getOAuthClient(clientId);
+    const isLocalRedirect = redirectUri.startsWith('http://localhost:') || redirectUri.startsWith('http://127.0.0.1:');
+
+    // Check if client exists — auto-register if it is a local MCP client with cached old ID
+    let client = await getOAuthClient(clientId);
+    if (!client && isLocalRedirect) {
+      console.log('[OAuth authorize] Auto-registering unknown local client:', clientId.slice(0, 16) + '...');
+      await registerOAuthClientForClientId(clientId, [redirectUri]);
+      client = await getOAuthClient(clientId);
+    }
+
     if (!client) {
       return new NextResponse(
-        JSON.stringify({ error: 'invalid_client' }),
+        JSON.stringify({ error: 'invalid_client', error_description: 'Client not registered' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
     // Validate redirect_uri — allow any localhost/127.0.0.1 URI for MCP clients
-    // MCP clients (VS Code, Claude Desktop) use dynamic local ports that change on restart
-    const isLocalRedirect = redirectUri.startsWith('http://localhost:') || redirectUri.startsWith('http://127.0.0.1:');
     const validRedirect = isLocalRedirect || await isValidRedirectUri(clientId, redirectUri);
     if (!validRedirect) {
       return new NextResponse(
-        JSON.stringify({ error: 'invalid_request', error_description: 'redirect_uri does not match registered URIs' }),
+        JSON.stringify({ error: 'invalid_request', error_description: 'redirect_uri not allowed' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -72,7 +78,6 @@ export async function GET(request: NextRequest) {
 
     const redirectUrl = new URL(redirectUri);
     redirectUrl.searchParams.set('code', code);
-    // State is passed through for the client to validate (CSRF protection per RFC 6749 Section 10.12)
     if (state) redirectUrl.searchParams.set('state', state);
 
     return NextResponse.redirect(redirectUrl);

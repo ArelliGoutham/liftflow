@@ -5,7 +5,7 @@ import {
   createToken,
   refreshAccessToken,
 } from '@/lib/db/repositories/oauthTokenRepository';
-import { getOAuthClient } from '@/lib/db/repositories/oauthClientRepository';
+import { getOAuthClient, registerOAuthClientForClientId } from '@/lib/db/repositories/oauthClientRepository';
 
 export const runtime = 'nodejs';
 
@@ -60,7 +60,17 @@ async function handleAuthorizationCodeGrant(formData: FormData): Promise<Respons
     );
   }
 
-  const client = await getOAuthClient(clientId as string);
+  // Auto-register unknown local clients (MCP clients may cache old IDs)
+  let client = await getOAuthClient(clientId as string);
+  if (!client) {
+    const redirectUriStr = redirectUri as string;
+    const isLocal = redirectUriStr.startsWith('http://localhost:') || redirectUriStr.startsWith('http://127.0.0.1:');
+    if (isLocal) {
+      console.log('[OAuth token] Auto-registering unknown local client:', (clientId as string).slice(0, 16) + '...');
+      await registerOAuthClientForClientId(clientId as string, [redirectUriStr]);
+      client = await getOAuthClient(clientId as string);
+    }
+  }
   if (!client) {
     return new Response(
       JSON.stringify({ error: 'invalid_client' }),
@@ -124,7 +134,14 @@ async function handleRefreshTokenGrant(formData: FormData): Promise<Response> {
     );
   }
 
-  const client = await getOAuthClient(clientId as string);
+  // Auto-register unknown local clients for refresh token flow too
+  let client = await getOAuthClient(clientId as string);
+  if (!client) {
+    // For refresh tokens, we do not have redirect_uri, so just create a placeholder
+    console.log('[OAuth token] Auto-registering unknown client for refresh:', (clientId as string).slice(0, 16) + '...');
+    await registerOAuthClientForClientId(clientId as string, []);
+    client = await getOAuthClient(clientId as string);
+  }
   if (!client) {
     return new Response(
       JSON.stringify({ error: 'invalid_client' }),
